@@ -1,6 +1,6 @@
 # Análisis Comparativo Exhaustivo: Repo Actual vs. Arquitectura Target
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental  
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental  
 **Autor del análisis:** djca / Roo Architect Mode  
 **Fecha:** Abril 2026  
 **Fuentes primarias:** `src/`, `plan/`, `forensics/`, `target_arch/`
@@ -465,4 +465,4 @@ FASE 3+: Clinical Record, Billing, BFF/Gateway
 
 ---
 
-*Documento generado en Abril 2026 como parte del análisis comparativo exhaustivo del proyecto Serenamente.*
+*Documento generado en Abril 2026 como parte del análisis comparativo exhaustivo del proyecto Serenidad.*

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital de Salud Mental |
+| **Proyecto** | Serenidad — Clínica Digital de Salud Mental |
 | **Fase** | 3 — Plataforma Completa |
 | **Duración estimada** | 6 semanas (Sprint 7-9) |
 | **Esfuerzo total** | ~280 horas ingeniería |
@@ -12,7 +12,7 @@
 
 ## Visión General Fase 3
 
-Fase 3 completa la plataforma Serenamente con **autorización granular (OpenFGA)**, **observabilidad completa PLG stack**, **billing multi-gateway** y **alertas a Telegram**. Cierra el MVP production-ready healthcare.
+Fase 3 completa la plataforma Serenidad con **autorización granular (OpenFGA)**, **observabilidad completa PLG stack**, **billing multi-gateway** y **alertas a Telegram**. Cierra el MVP production-ready healthcare.
 
 **Dependencias entrantes**: Fase 1 (infraestructura + IAM), Fase 2 (NATS + servicios médicos)
 

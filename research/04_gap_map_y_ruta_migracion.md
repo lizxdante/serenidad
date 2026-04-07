@@ -1,6 +1,6 @@
 # Mapa de Brechas y Ruta de Construcción: Del Diseño al Target v3.0
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental Global  
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental Global  
 **Versión:** 2.0 — Actualizado con Stack Target v3.0  
 **Fecha:** Abril 2026  
 **Autor:** djca / Roo Architect Mode  
@@ -45,24 +45,24 @@ Gateway ($0):
   Hono v4.x en Cloudflare Workers (BFF)
   Traefik ForwardAuth → IAM Service (reemplaza Caddy forward_auth)
 
-IAM (self-hosted en k8s namespace: serenamente-core):
+IAM (self-hosted en k8s namespace: serenidad-core):
   Ory Kratos v1.3.1 → AuthN (Passkeys, MFA, sesiones) via Helm
   OpenFGA v1.x → AuthZ (Zanzibar relation tuples) via Helm
   IAM Domain Service → Go, JWT enriquecido, Outbox
 
-Microservicios Core (Go, Deployment+Service en serenamente-core):
+Microservicios Core (Go, Deployment+Service en serenidad-core):
   Scheduling Service → FHIR + EXCLUDE GIST + NATS Outbox
   Clinical Record Service → Event Store puro + openEHR JSON
   Billing & Ops Service → Transacciones + multi-pasarela
 
-Event Bus (self-hosted en serenamente-data):
+Event Bus (self-hosted en serenidad-data):
   NATS JetStream v2.11.x — streams por dominio, retención por tipo
   Helm: nats/nats, storage=file (PVC persistido)
 
 Serialización:
   Protobuf proto3 + buf.build CLI
 
-Persistencia (self-hosted en serenamente-data):
+Persistencia (self-hosted en serenidad-data):
   CloudNativePG v1.x — PostgreSQL 17.4 — 6 databases via Cluster CRD
   WAL continuo → Backblaze B2 (PITR disponible, barman-cloud)
   ScheduledBackup CRD (02:00 UTC, retención 30 días base + 90 WAL)
@@ -71,7 +71,7 @@ Estándares Médicos:
   FHIR R4 — output APIs
   openEHR Canonical JSON — formato de eventos clínicos
 
-Observabilidad (self-hosted en serenamente-ops, Fase 3):
+Observabilidad (self-hosted en serenidad-ops, Fase 3):
   kube-prometheus-stack v82.x + Loki v3.x + Tempo v2.9+
   Grafana v11.x + Alertmanager v0.27+ → Telegram bot
 
@@ -121,7 +121,7 @@ Ver ADRs definitivos: plans/06_talos_k8s_decision_y_cambios_en_cadena.md
 
 ```mermaid
 gantt
-    title Roadmap Serenamente — Stack Target v3.0
+    title Roadmap Serenidad — Stack Target v3.0
     dateFormat YYYY-MM
     
     section Fase 1 - Cimientos
@@ -167,7 +167,7 @@ gantt
 #    → Sin SSH key — Talos no usa SSH
 
 # 2. Generar configuración Talos desde máquina local:
-talosctl gen config serenamente https://<VPS_IP>:6443 \
+talosctl gen config serenidad https://<VPS_IP>:6443 \
   --output-dir infra/clusters/hetzner-prod/talos/ \
   --with-secrets secrets.yaml
 
@@ -181,7 +181,7 @@ talosctl kubeconfig --nodes <VPS_IP> --force
 
 # 5. Bootstrap FluxCD (GitOps):
 flux bootstrap github \
-  --owner=serenamente \
+  --owner=serenidad \
   --repository=serenidad-platform \
   --branch=main \
   --path=infra/clusters/hetzner-prod
@@ -248,37 +248,37 @@ CloudNativePG gestiona el ciclo de vida completo del cluster PostgreSQL via CRD 
 version: v1.3
 
 selfservice:
-  default_browser_return_url: https://app.serenamente.com/
+  default_browser_return_url: https://app.sereni.dad/
   allowed_return_urls:
-    - https://app.serenamente.com/
+    - https://app.sereni.dad/
   
   flows:
     login:
-      ui_url: https://app.serenamente.com/auth/login
+      ui_url: https://app.sereni.dad/auth/login
       lifespan: 10m
     registration:
-      ui_url: https://app.serenamente.com/auth/register
+      ui_url: https://app.sereni.dad/auth/register
       lifespan: 10m
     recovery:
       enabled: true
-      ui_url: https://app.serenamente.com/auth/recovery
+      ui_url: https://app.sereni.dad/auth/recovery
   
   methods:
     passkey:
       enabled: true
       config:
         rp:
-          display_name: Serenamente
-          id: serenamente.com
+          display_name: Serenidad
+          id: sereni.dad
           origins:
-            - https://app.serenamente.com
+            - https://app.sereni.dad
     
     password:
       enabled: false  # Solo passkeys por defecto
 
 session:
   cookie:
-    domain: serenamente.com
+    domain: sereni.dad
     same_site: Lax
   lifespan: 720h  # 30 días
 
@@ -393,13 +393,13 @@ Reemplaza `pg_dump + rclone + cron`. CloudNativePG gestiona el backup declarativ
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
-  name: serenamente-pg-daily
-  namespace: serenamente-data
+  name: serenidad-pg-daily
+  namespace: serenidad-data
 spec:
   schedule: "0 2 * * *"  # 02:00 UTC diario
   backupOwnerReference: self
   cluster:
-    name: serenamente-pg
+    name: serenidad-pg
   target: prefer-standby  # En Fase 4+ con réplicas
 ```
 
@@ -416,7 +416,7 @@ El WAL archiving continuo ya está configurado en el Cluster CRD (barman-cloud �
 ✅ La infraestructura:
    1. Hetzner CX32 corriendo Talos Linux v1.10.x + Kubernetes 1.33.x
    2. FluxCD v2.x reconciliando estado desde Git cada 1 minuto
-   3. cert-manager + Traefik sirviendo api.serenamente.com con TLS Let's Encrypt
+   3. cert-manager + Traefik sirviendo api.sereni.dad con TLS Let's Encrypt
    4. CloudNativePG cluster con 6 databases aisladas y WAL continuo → B2
    5. ScheduledBackup CRD ejecutando snapshot diario a las 02:00 UTC
    6. Traefik ForwardAuth Middleware validando JWTs en todas las rutas /api/*
@@ -438,7 +438,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: nats
-  namespace: serenamente-data
+  namespace: serenidad-data
 spec:
   interval: 1h
   chart:
@@ -467,8 +467,8 @@ Los 4 Streams con sus retenciones se crean via NACK CRDs (Kubernetes-native):
 
 ```yaml
 # infra/infrastructure/nats/streams.yaml — 4 streams declarativos
-# SERENAMENTE_IAM: 365d, SERENAMENTE_SCHED: 730d
-# SERENAMENTE_CLINICAL: ilimitado, SERENAMENTE_BILLING: 3650d
+# SERENIDAD_IAM: 365d, SERENIDAD_SCHED: 730d
+# SERENIDAD_CLINICAL: ilimitado, SERENIDAD_BILLING: 3650d
 ```
 
 ### Tarea F2-02: Protobuf schemas + buf.build
@@ -476,7 +476,7 @@ Los 4 Streams con sus retenciones se crean via NACK CRDs (Kubernetes-native):
 ```protobuf
 // packages/events/proto/scheduling/v1/appointment_booked.proto
 syntax = "proto3";
-package serenamente.scheduling.v1;
+package serenidad.scheduling.v1;
 
 import "google/protobuf/timestamp.proto";
 
@@ -501,7 +501,7 @@ message FHIRAppointmentRef {
 ```protobuf
 // packages/events/proto/clinical/v1/diagnosis_recorded.proto
 syntax = "proto3";
-package serenamente.clinical.v1;
+package serenidad.clinical.v1;
 
 import "google/protobuf/timestamp.proto";
 
@@ -600,7 +600,7 @@ import (
     natsjc "github.com/nats-io/nats.go/jetstream"
     "google.golang.org/protobuf/proto"
     
-    clinicalv1 "serenamente/packages/events/gen/go/clinical/v1"
+    clinicalv1 "serenidad/packages/events/gen/go/clinical/v1"
 )
 
 const clinicalSchema = `
@@ -755,7 +755,7 @@ type AuthzService struct {
     storeID string
 }
 
-// Modelo de autorización para Serenamente
+// Modelo de autorización para Serenidad
 // Registrar en OpenFGA una sola vez al inicializar:
 const authorizationModel = `
 model
@@ -874,7 +874,7 @@ func (b *BillingService) HandleConsultationFinished(ctx context.Context, event *
 
 ### Tarea F3-03: Observabilidad completa (kube-prometheus-stack v82.x)
 
-Reemplaza el stack de contenedores Docker individuales. Todo el observability stack se despliega via un único HelmRelease en el namespace `serenamente-ops`:
+Reemplaza el stack de contenedores Docker individuales. Todo el observability stack se despliega via un único HelmRelease en el namespace `serenidad-ops`:
 
 ```yaml
 # infra/infrastructure/monitoring/helmrelease.yaml
@@ -882,7 +882,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: kube-prometheus-stack
-  namespace: serenamente-ops
+  namespace: serenidad-ops
 spec:
   interval: 1h
   chart:
@@ -964,7 +964,7 @@ receivers:
 ```
 REGLA 1: Backup antes de cualquier cambio de schema o datos
   Antes de cualquier cambio de schema o migración de datos:
-    → CloudNativePG: kubectl cnpg backup serenamente-pg (base backup manual)
+    → CloudNativePG: kubectl cnpg backup serenidad-pg (base backup manual)
     → Verificar que el backup es restaurable (test de restore via PITR)
 
 REGLA 2: Un servicio Go = un binario que compila y tiene tests

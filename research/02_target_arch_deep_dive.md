@@ -1,6 +1,6 @@
 # Deep-Dive: Arquitectura Target "Build It Right The First Time"
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental Global  
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental Global  
 **Fuente primaria:** `target_arch/descripcion.md`, `target_arch/arch.puml`, `target_arch/comp_iam_capa_core.puml`  
 **Autor del análisis:** djca / Roo Architect Mode  
 **Fecha:** Abril 2026
@@ -184,15 +184,15 @@ El JWT que produce el IAM Domain Service no es un JWT estándar de autenticació
 ```json
 {
   "sub": "01HV3K9P5N7Q8R6M4J2X0WBY3Z",  // UUIDv7 del usuario
-  "iss": "iam.serenamente.com",
-  "aud": "serenamente-services",
+  "iss": "iam.sereni.dad",
+  "aud": "serenidad-services",
   "exp": 1735689600,
   "iat": 1735686000,
   "role": "doctor",                        // Rol primario para RLS
   "tenant_id": "01HV...",                  // Para multi-tenancy
-  "did": "did:web:serenamente.com:users:...", // Identidad soberana
+  "did": "did:web:sereni.dad:users:...", // Identidad soberana
   "permissions": ["read:own_patients", "write:consultations"],
-  "keto_namespace": "serenamente"          // Para verificación delegada a Keto
+  "keto_namespace": "serenidad"          // Para verificación delegada a Keto
 }
 ```
 
@@ -253,10 +253,10 @@ Esta arquitectura escala a **millones de relaciones** sin degradación de perfor
 Los Decentralized Identifiers (DIDs) permiten que el paciente sea dueño de su identidad médica:
 
 ```
-did:web:serenamente.com:patients:01HV3K9P5N7Q8R6M4J2X0WBY3Z
+did:web:sereni.dad:patients:01HV3K9P5N7Q8R6M4J2X0WBY3Z
 ```
 
-**Implicación práctica:** Si el paciente decide migrar a otra plataforma médica compatible con DIDs, puede llevar su identidad (y con ella, los permisos sobre su historia clínica) sin depender de Serenamente como custodio de su identidad. Esto es cumplimiento GDPR by design.
+**Implicación práctica:** Si el paciente decide migrar a otra plataforma médica compatible con DIDs, puede llevar su identidad (y con ella, los permisos sobre su historia clínica) sin depender de Serenidad como custodio de su identidad. Esto es cumplimiento GDPR by design.
 
 ---
 
@@ -326,8 +326,8 @@ CREATE TABLE appointments (
     }
   ],
   "extension": [{
-    "url": "https://serenamente.com/fhir/StructureDefinition/booking-source",
-    "valueString": "serenamente-scheduling-v1"
+    "url": "https://sereni.dad/fhir/StructureDefinition/booking-source",
+    "valueString": "serenidad-scheduling-v1"
   }]
 }
 ```
@@ -356,7 +356,7 @@ openEHR-EHR-ACTION.medication.v1
 openEHR-EHR-COMPOSITION.encounter.v1   ← Una consulta completa
 ```
 
-**Para Serenamente (salud mental), los arquetipos relevantes serían:**
+**Para Serenidad (salud mental), los arquetipos relevantes serían:**
 - `openEHR-EHR-EVALUATION.adverse_reaction_risk.v2` — Alergias y reacciones adversas
 - `openEHR-EHR-OBSERVATION.mental_state_exam.v1` — Examen del estado mental
 - `openEHR-EHR-EVALUATION.problem_diagnosis.v1` — Diagnóstico (con codificación CIE-10/CIE-11)
@@ -393,7 +393,7 @@ CREATE TABLE clinical_events (
 ```protobuf
 // clinical_events.proto
 syntax = "proto3";
-package serenamente.clinical.v1;
+package serenidad.clinical.v1;
 
 message DiagnosisRecorded {
     string event_id = 1;          // UUIDv7
@@ -483,10 +483,10 @@ NATS JetStream fue elegido sobre alternativas como Kafka o RabbitMQ por las sigu
 # Naming convention: <dominio>.<servicio>.<tipo-evento>.<version>
 
 Streams definidos:
-  SERENAMENTE_IAM        → subjects: iam.>
-  SERENAMENTE_SCHEDULING → subjects: scheduling.>
-  SERENAMENTE_CLINICAL   → subjects: clinical.>
-  SERENAMENTE_BILLING    → subjects: billing.>
+  SERENIDAD_IAM        → subjects: iam.>
+  SERENIDAD_SCHEDULING → subjects: scheduling.>
+  SERENIDAD_CLINICAL   → subjects: clinical.>
+  SERENIDAD_BILLING    → subjects: billing.>
 
 Subjects publicados:
   iam.users.registered.v1        → [UserRegistered]
@@ -866,5 +866,5 @@ El diagrama del target ubica al API Gateway como "[3] API Gateway / BFF" — Fas
 
 ---
 
-*Documento generado en Abril 2026 como parte del análisis exhaustivo del Proyecto Serenamente.*
+*Documento generado en Abril 2026 como parte del análisis exhaustivo del Proyecto Serenidad.*
 *Siguiente documento: [`03_stack_alternatives_challenger.md`](./03_stack_alternatives_challenger.md)*

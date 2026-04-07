@@ -293,7 +293,7 @@ note right of GoIAM
     sub: UUIDv7 del usuario
     role: doctor | patient | admin
     tenant_id: UUIDv7 de la org
-    did: did:web:serenamente.com:...
+    did: did:web:sereni.dad:...
 end note
 
 note right of OpenFGA
@@ -345,7 +345,7 @@ skinparam linetype ortho
 skinparam padding 6
 skinparam defaultTextAlignment center
 
-title Diagrama de Infraestructura Operacional\nSerenamente v3.0 - VPS + Docker Compose
+title Diagrama de Infraestructura Operacional\nSerenidad v3.0 - VPS + Docker Compose
 
 ' --- COLORES ---
 !define COLOR_DOCKER  #2496ED
@@ -379,7 +379,7 @@ skinparam component {
 ' DNS + CDN
 ' ==========================================================
 rectangle "DNS - Cloudflare (Gratuito)" {
-  component "serenamente.com\n app.serenamente.com\n api.serenamente.com\n--\nA record -> VPS IP\nCF Proxy: OFF para api\nCF Proxy: ON para app" <<CF>> as DNS
+  component "sereni.dad\n app.sereni.dad\n api.sereni.dad\n--\nA record -> VPS IP\nCF Proxy: OFF para api\nCF Proxy: ON para app" <<CF>> as DNS
 }
 
 ' ==========================================================
@@ -404,13 +404,13 @@ rectangle "VPS Hetzner CX31 - ~10 usd/mes\n2 vCPU AMD / 4GB RAM / 80GB SSD / Ubu
 
     component "openfga:8080\nopenfga/openfga:latest\n--\nAuthZ service\nZanzibar engine\ngRPC + HTTP" <<Docker>> as OpenFGA
 
-    component "iam-service:8080\nserenamente/iam:latest\n--\nJWT enrichment\nOutbox worker\nDomain events" <<Docker>> as IAMSvc
+    component "iam-service:8080\nserenidad/iam:latest\n--\nJWT enrichment\nOutbox worker\nDomain events" <<Docker>> as IAMSvc
 
-    component "scheduling-service:8081\nserenamente/scheduling:latest\n--\nFHIR Appointment\nEXCLUDE GIST\nOutbox worker" <<Docker>> as SchedSvc
+    component "scheduling-service:8081\nserenidad/scheduling:latest\n--\nFHIR Appointment\nEXCLUDE GIST\nOutbox worker" <<Docker>> as SchedSvc
 
-    component "clinical-service:8082\nserenamente/clinical:latest\n--\nEvent Store\nopenEHR JSON\nRLS enforced" <<Docker>> as ClinSvc
+    component "clinical-service:8082\nserenidad/clinical:latest\n--\nEvent Store\nopenEHR JSON\nRLS enforced" <<Docker>> as ClinSvc
 
-    component "billing-service:8083\nserenamente/billing:latest\n--\nMulti-gateway\nIzipay Stripe\nOutbox worker" <<Docker>> as BillSvc
+    component "billing-service:8083\nserenidad/billing:latest\n--\nMulti-gateway\nIzipay Stripe\nOutbox worker" <<Docker>> as BillSvc
 
     component "nats:4222\nnats:2.10-alpine\n--\nJetStream\nFile storage\nMonitoring :8222" <<Docker>> as NATS
 
@@ -436,11 +436,11 @@ rectangle "Backups - Backblaze B2 - ~0.05 usd/mes" {
 ' ==========================================================
 
 ' Usuario → Cloudflare
-[Navegador\nPaciente/Medico] --> CFPages : "HTTPS app.serenamente.com"
+[Navegador\nPaciente/Medico] --> CFPages : "HTTPS app.sereni.dad"
 CFPages --> CFWorkers : "fetch() al BFF\npara llamadas API"
 
 ' BFF → VPS
-CFWorkers --> Caddy : "HTTPS api.serenamente.com\n(puerto 443)"
+CFWorkers --> Caddy : "HTTPS api.sereni.dad\n(puerto 443)"
 
 ' Caddy → Servicios internos
 Caddy -down-> IAMSvc    : "/auth/* y /api/iam/*\nforward_auth para todos"
@@ -493,7 +493,7 @@ end note
 
 note right of Caddy
   **Caddyfile - TLS automatico:**
-  api.serenamente.com {
+  api.sereni.dad {
     forward_auth iam-service:8080 {
       uri /internal/validate-token
     }

@@ -8,7 +8,7 @@
 > **⚠️ NOTA DE INFRAESTRUCTURA (Abril 2026):**
 > Las secciones `docker-compose.yml` en este documento aplican **solo a entorno de desarrollo local**.
 > En **producción** (Hetzner CX32 + Talos Linux + Kubernetes 1.33.x), cada servicio se despliega
-> como `Deployment + Service` en el namespace `serenamente-core` via FluxCD GitOps.
+> como `Deployment + Service` en el namespace `serenidad-core` via FluxCD GitOps.
 > Los templates de `Deployment` k8s están en [`plans/06_talos_k8s_decision_y_cambios_en_cadena.md`](./06_talos_k8s_decision_y_cambios_en_cadena.md).
 > Las referencias a "Caddy forward_auth" corresponden al equivalente Kubernetes: **Traefik ForwardAuth Middleware**.
 
@@ -25,7 +25,7 @@
 **`infra/kratos/schemas/patient.json`:**
 ```json
 {
-  "$id": "https://api.serenamente.com/schemas/identity/patient.json",
+  "$id": "https://api.sereni.dad/schemas/identity/patient.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Patient",
   "type": "object",
@@ -75,39 +75,39 @@ dsn: postgres://kratos_user:${KRATOS_DB_PASSWORD}@postgres:5432/kratos_db?sslmod
 
 serve:
   public:
-    base_url: https://api.serenamente.com/
+    base_url: https://api.sereni.dad/
     cors:
       enabled: true
-      allowed_origins: [https://app.serenamente.com]
+      allowed_origins: [https://app.sereni.dad]
   admin:
     base_url: http://ory-kratos:4434/
     host: 0.0.0.0   # Solo accesible desde la red Docker interna
 
 selfservice:
-  default_browser_return_url: https://app.serenamente.com/
+  default_browser_return_url: https://app.sereni.dad/
   flows:
     login:
-      ui_url: https://app.serenamente.com/auth/login
+      ui_url: https://app.sereni.dad/auth/login
       lifespan: 10m
     registration:
-      ui_url: https://app.serenamente.com/auth/register
+      ui_url: https://app.sereni.dad/auth/register
       lifespan: 10m
     recovery:
       enabled: true
-      ui_url: https://app.serenamente.com/auth/recovery
+      ui_url: https://app.sereni.dad/auth/recovery
       use: code
     verification:
       enabled: true
-      ui_url: https://app.serenamente.com/auth/verification
+      ui_url: https://app.sereni.dad/auth/verification
       use: code
   methods:
     passkey:
       enabled: true
       config:
         rp:
-          display_name: Serenamente
-          id: serenamente.com
-          origins: [https://app.serenamente.com]
+          display_name: Serenidad
+          id: sereni.dad
+          origins: [https://app.sereni.dad]
     password:
       enabled: false   # Cero contraseñas por diseño (R1: "Build It Right")
     totp:
@@ -115,7 +115,7 @@ selfservice:
 
 session:
   cookie:
-    domain: .serenamente.com
+    domain: .sereni.dad
     same_site: Lax
     persistent: true
   lifespan: 720h   # 30 días
@@ -131,8 +131,8 @@ identity:
 courier:
   smtp:
     connection_uri: smtps://${SMTP_USER}:${SMTP_PASS}@smtp.sendgrid.net:465
-    from_name: Serenamente
-    from_address: noreply@serenamente.com
+    from_name: Serenidad
+    from_address: noreply@sereni.dad
 
 log:
   level: info
@@ -144,7 +144,7 @@ log:
 ```yaml
   ory-kratos:
     image: oryd/kratos:v1.3.1
-    container_name: serenamente-kratos
+    container_name: serenidad-kratos
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -154,7 +154,7 @@ log:
     ports:
       - "4433:4433"   # Public API → expuesta via Caddy en /auth/*
       - "4434:4434"   # Admin API → SOLO interna, NUNCA exponer al exterior
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:4434/health/ready | grep -q 'ok'"]
       interval: 10s
@@ -168,9 +168,9 @@ Kratos aplica migraciones de su schema SQL automáticamente al arrancar contra `
 
 **Criterio de aceptación:**
 - `curl http://localhost:4434/health/ready` → `{"status":"ok"}`.
-- `curl https://api.serenamente.com/auth/registration/api` devuelve un Kratos registration flow JSON.
+- `curl https://api.sereni.dad/auth/registration/api` devuelve un Kratos registration flow JSON.
 - Tabla `identities` existe en `kratos_db` (migración aplicada).
-- El self-service flow de Passkey funciona desde `app.serenamente.com` (WebAuthn challenge resuelto).
+- El self-service flow de Passkey funciona desde `app.sereni.dad` (WebAuthn challenge resuelto).
 
 ---
 
@@ -226,7 +226,7 @@ CREATE TABLE users (
     email      TEXT UNIQUE NOT NULL,
     role       TEXT NOT NULL CHECK (role IN ('patient', 'doctor', 'admin')),
     tenant_id  UUID NOT NULL,              -- UUIDv7 de la organización
-    did        TEXT UNIQUE,               -- did:web:serenamente.com:users:{id}
+    did        TEXT UNIQUE,               -- did:web:sereni.dad:users:{id}
     is_active  BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -265,7 +265,7 @@ type EnrichedClaims struct {
     Sub      string `json:"sub"`        // UUIDv7 del usuario (PK en users)
     Role     string `json:"role"`       // "patient" | "doctor" | "admin"
     TenantID string `json:"tenant_id"`  // UUIDv7 de la organización
-    DID      string `json:"did"`        // did:web:serenamente.com:users:{sub}
+    DID      string `json:"did"`        // did:web:sereni.dad:users:{sub}
     Email    string `json:"email"`
     jwt.RegisteredClaims               // iat, exp, iss, aud
 }
@@ -340,9 +340,9 @@ ENTRYPOINT ["iam-service"]
 
 ```yaml
   iam-service:
-    image: serenamente/iam:latest
+    image: serenidad/iam:latest
     build: { context: ./services/iam }
-    container_name: serenamente-iam
+    container_name: serenidad-iam
     restart: unless-stopped
     depends_on:
       postgres:   { condition: service_healthy }
@@ -352,11 +352,11 @@ ENTRYPOINT ["iam-service"]
       KRATOS_ADMIN_URL: http://ory-kratos:4434
       NATS_URL: nats://nats:4222
       JWT_PRIVATE_KEY_ED25519: ${JWT_PRIVATE_KEY_ED25519}  # base64 de clave privada
-      JWT_ISSUER: https://api.serenamente.com
+      JWT_ISSUER: https://api.sereni.dad
       JWT_EXPIRY: 3600
       LOG_LEVEL: info
       PORT: 8080
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health | grep -q 'ok'"]
       interval: 10s
@@ -387,7 +387,7 @@ apps/bff/
 │   ├── index.ts                  # Entry point: Hono app, middleware, routes
 │   ├── middleware/
 │   │   ├── auth.ts               # JWT EdDSA verificación local (jose)
-│   │   └── cors.ts               # CORS restrictivo a app.serenamente.com
+│   │   └── cors.ts               # CORS restrictivo a app.sereni.dad
 │   ├── routes/
 │   │   ├── iam.ts                # Proxy /api/iam/* → VPS
 │   │   ├── scheduling.ts         # Proxy /api/scheduling/* → VPS
@@ -410,7 +410,7 @@ const app = new Hono<{ Bindings: CloudflareBindings }>();
 
 // CORS: solo el portal de la aplicación
 app.use("*", cors({
-  origin: ["https://app.serenamente.com"],
+  origin: ["https://app.sereni.dad"],
   allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowHeaders: ["Authorization", "Content-Type"],
   credentials: true,
@@ -424,7 +424,7 @@ app.use("/api/*", async (c, next) => {
 });
 
 // Proxy transparente al VPS, añadiendo headers de claims del JWT
-const VPS_BASE = "https://api.serenamente.com";
+const VPS_BASE = "https://api.sereni.dad";
 app.all("/api/*", async (c) => {
   const url = new URL(c.req.url);
   const targetUrl = `${VPS_BASE}${url.pathname}${url.search}`;
@@ -464,7 +464,7 @@ export async function verifyJwt(c: Context, next: Next) {
       "EdDSA"
     );
     const { payload } = await jwtVerify(token, publicKey, {
-      issuer: "https://api.serenamente.com",
+      issuer: "https://api.sereni.dad",
       algorithms: ["EdDSA"],
     });
     // Enriquecer el contexto con los claims del JWT para usar en el proxy
@@ -481,7 +481,7 @@ export async function verifyJwt(c: Context, next: Next) {
 ### 4.7.4 — `wrangler.toml`
 
 ```toml
-name = "serenamente-bff"
+name = "serenidad-bff"
 main = "src/index.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
@@ -538,7 +538,7 @@ Los portales médico y paciente se construyen en Fase 2. En Fase 1 solo se imple
 ```typescript
 // src/routes/layout.tsx — wrapper para rutas protegidas
 export const onRequest: RequestHandler = async ({ cookie, redirect }) => {
-  const token = cookie.get("serenamente_jwt");
+  const token = cookie.get("serenidad_jwt");
   if (!token?.value) {
     throw redirect(302, "/auth/login");
   }
@@ -559,7 +559,7 @@ export const onRequest: RequestHandler = async ({ cookie, redirect }) => {
 ### 4.9.1 — Cuenta Backblaze B2
 
 1. Crear cuenta en `backblaze.com` (10GB gratis, luego $0.006/GB/mes).
-2. Crear bucket privado: `serenamente-backups`.
+2. Crear bucket privado: `serenidad-backups`.
 3. Crear Application Key con permisos solo al bucket.
 4. Guardar `B2_ACCOUNT_ID` y `B2_APPLICATION_KEY` en `.env` del VPS.
 
@@ -567,10 +567,10 @@ export const onRequest: RequestHandler = async ({ cookie, redirect }) => {
 
 ```bash
 curl https://rclone.org/install.sh | sudo bash
-rclone config create serenamente-b2 b2 \
+rclone config create serenidad-b2 b2 \
     account "${B2_ACCOUNT_ID}" \
     key "${B2_APPLICATION_KEY}"
-rclone mkdir serenamente-b2:serenamente-backups/postgres/
+rclone mkdir serenidad-b2:serenidad-backups/postgres/
 ```
 
 ### 4.9.3 — `scripts/backup.sh`
@@ -580,9 +580,9 @@ rclone mkdir serenamente-b2:serenamente-backups/postgres/
 set -euo pipefail
 
 DATE=$(date -u +%Y%m%d_%H%M%S)
-BACKUP_DIR="/var/backups/serenamente/postgres"
-CONTAINER="serenamente-postgres"
-PG_USER="serenamente_admin"
+BACKUP_DIR="/var/backups/serenidad/postgres"
+CONTAINER="serenidad-postgres"
+PG_USER="serenidad_admin"
 DATABASES=("iam_db" "scheduling_db" "clinical_db" "billing_db" "kratos_db" "openfga_db")
 
 mkdir -p "${BACKUP_DIR}"
@@ -597,7 +597,7 @@ for DB in "${DATABASES[@]}"; do
 done
 
 echo "Subiendo a Backblaze B2..."
-rclone copy "${BACKUP_DIR}" serenamente-b2:serenamente-backups/postgres/ \
+rclone copy "${BACKUP_DIR}" serenidad-b2:serenidad-backups/postgres/ \
     --min-age 1s --log-level INFO
 
 # Retener solo últimos 30 días localmente
@@ -613,7 +613,7 @@ echo "[${DATE}] Backup completado. Costo estimado B2: ~0.006 USD/GB/mes"
 # Verificación semanal: garantizar que los backups son restaurables
 set -euo pipefail
 
-LATEST_IAM=$(ls -t /var/backups/serenamente/postgres/iam_db_*.sql.gz | head -1)
+LATEST_IAM=$(ls -t /var/backups/serenidad/postgres/iam_db_*.sql.gz | head -1)
 echo "Verificando backup: ${LATEST_IAM}"
 pg_restore --list "${LATEST_IAM}" | head -20
 echo "Backup verificado: restauración viable."
@@ -622,16 +622,16 @@ echo "Backup verificado: restauración viable."
 ### 4.9.5 — Cron jobs
 
 ```bash
-chmod +x /opt/serenamente/scripts/backup.sh
-chmod +x /opt/serenamente/scripts/verify-restore.sh
+chmod +x /opt/serenidad/scripts/backup.sh
+chmod +x /opt/serenidad/scripts/verify-restore.sh
 
 # Backup diario 02:00 UTC
-echo "0 2 * * * serenamente /opt/serenamente/scripts/backup.sh >> /var/log/serenamente-backup.log 2>&1" \
-    | sudo tee /etc/cron.d/serenamente-backup
+echo "0 2 * * * serenidad /opt/serenidad/scripts/backup.sh >> /var/log/serenidad-backup.log 2>&1" \
+    | sudo tee /etc/cron.d/serenidad-backup
 
 # Verificación semanal domingo 03:00 UTC
-echo "0 3 * * 0 serenamente /opt/serenamente/scripts/verify-restore.sh >> /var/log/serenamente-verify.log 2>&1" \
-    | sudo tee -a /etc/cron.d/serenamente-backup
+echo "0 3 * * 0 serenidad /opt/serenidad/scripts/verify-restore.sh >> /var/log/serenidad-verify.log 2>&1" \
+    | sudo tee -a /etc/cron.d/serenidad-backup
 ```
 
 **Criterio de aceptación:** 6 archivos `.sql.gz` en B2 después del primer run. `pg_restore --list` lista objetos restaurables. Cron ejecuta sin errores. Alertas si el cron falla (via Alertmanager en Fase 3).
@@ -653,7 +653,7 @@ echo "0 3 * * 0 serenamente /opt/serenamente/scripts/verify-restore.sh >> /var/l
 ```hcl
 port: 4222
 http_port: 8222
-server_name: serenamente-nats
+server_name: serenidad-nats
 jetstream: {
   store_dir: /data
   max_memory_store: 512MB
@@ -669,7 +669,7 @@ max_payload: 10MB
 ```yaml
   nats:
     image: nats:2.11-alpine
-    container_name: serenamente-nats
+    container_name: serenidad-nats
     restart: unless-stopped
     command: ["--config=/etc/nats/nats.conf"]
     volumes:
@@ -679,7 +679,7 @@ max_payload: 10MB
     ports:
       - "4222:4222"   # Client port — solo red interna
       - "8222:8222"   # Monitoring — solo red interna
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8222/healthz | grep -q 'ok'"]
       interval: 10s
@@ -691,25 +691,25 @@ max_payload: 10MB
 
 | Stream | Subject | Retención | Razón |
 |--------|---------|-----------|-------|
-| `SERENAMENTE_IAM` | `iam.>` | 365 días | Auditoría de identidad (1 año) |
-| `SERENAMENTE_SCHED` | `scheduling.>` | 730 días | Historial de citas (2 años) |
-| `SERENAMENTE_CLINICAL` | `clinical.>` | **Indefinida** | Datos médicos permanentes por ley |
-| `SERENAMENTE_BILLING` | `billing.>` | 3650 días | Requisito fiscal LATAM (10 años) |
+| `SERENIDAD_IAM` | `iam.>` | 365 días | Auditoría de identidad (1 año) |
+| `SERENIDAD_SCHED` | `scheduling.>` | 730 días | Historial de citas (2 años) |
+| `SERENIDAD_CLINICAL` | `clinical.>` | **Indefinida** | Datos médicos permanentes por ley |
+| `SERENIDAD_BILLING` | `billing.>` | 3650 días | Requisito fiscal LATAM (10 años) |
 
 ```bash
-nats stream add SERENAMENTE_IAM \
+nats stream add SERENIDAD_IAM \
     --subjects "iam.>" --storage file --retention limits --max-age 365d --replicas 1
-nats stream add SERENAMENTE_SCHED \
+nats stream add SERENIDAD_SCHED \
     --subjects "scheduling.>" --storage file --retention limits --max-age 730d --replicas 1
-nats stream add SERENAMENTE_CLINICAL \
+nats stream add SERENIDAD_CLINICAL \
     --subjects "clinical.>" --storage file --retention limits --replicas 1
-nats stream add SERENAMENTE_BILLING \
+nats stream add SERENIDAD_BILLING \
     --subjects "billing.>" --storage file --retention limits --max-age 3650d --replicas 1
 ```
 
 Todos los streams: `storage=file` (persiste en disco), consumer ACK policy `explicit`, `MaxDeliver=5` (auto-DLQ tras 5 fallos).
 
-**Criterio de aceptación:** `nats stream ls` lista 4 streams. Mensaje publicado en `iam.test.1` aparece en `SERENAMENTE_IAM`. NATS sobrevive `docker restart serenamente-nats` sin perder mensajes almacenados.
+**Criterio de aceptación:** `nats stream ls` lista 4 streams. Mensaje publicado en `iam.test.1` aparece en `SERENIDAD_IAM`. NATS sobrevive `docker restart serenidad-nats` sin perder mensajes almacenados.
 
 ---
 
@@ -817,9 +817,9 @@ func ToFHIRR4(apt *domain.Appointment) FHIRAppointment {
 
 ```yaml
   scheduling-service:
-    image: serenamente/scheduling:latest
+    image: serenidad/scheduling:latest
     build: { context: ./services/scheduling }
-    container_name: serenamente-scheduling
+    container_name: serenidad-scheduling
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -830,7 +830,7 @@ func ToFHIRR4(apt *domain.Appointment) FHIRAppointment {
       NATS_URL: nats://nats:4222
       IAM_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY_ED25519}
       PORT: 8081
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health | grep -q 'ok'"]
       interval: 10s
@@ -840,7 +840,7 @@ func ToFHIRR4(apt *domain.Appointment) FHIRAppointment {
 **Criterio de aceptación:**
 - `EXCLUDE USING GIST` rechaza INSERT con slots solapados (error de constraint PG).
 - `GET /api/scheduling/availability?doctor_id=...&date=...` devuelve slots disponibles.
-- `POST /api/scheduling/appointments` crea cita y `AppointmentBooked` aparece en `SERENAMENTE_SCHED`.
+- `POST /api/scheduling/appointments` crea cita y `AppointmentBooked` aparece en `SERENIDAD_SCHED`.
 - Respuesta incluye FHIR R4 Appointment JSON válido (validable con HAPI FHIR validator).
 - Consumer `DoctorOffboarded` cancela citas futuras del médico dado de baja.
 
@@ -1059,9 +1059,9 @@ func (c *Consumer) HandleAppointmentBooked(ctx context.Context, msg jetstream.Ms
 
 ```yaml
   clinical-service:
-    image: serenamente/clinical:latest
+    image: serenidad/clinical:latest
     build: { context: ./services/clinical }
-    container_name: serenamente-clinical
+    container_name: serenidad-clinical
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -1072,7 +1072,7 @@ func (c *Consumer) HandleAppointmentBooked(ctx context.Context, msg jetstream.Ms
       NATS_URL: nats://nats:4222
       IAM_JWT_PUBLIC_KEY: ${JWT_PUBLIC_KEY_ED25519}
       PORT: 8082
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8082/health | grep -q 'ok'"]
       interval: 10s
@@ -1082,7 +1082,7 @@ func (c *Consumer) HandleAppointmentBooked(ctx context.Context, msg jetstream.Ms
 **Criterio de aceptación:**
 - `UPDATE` y `DELETE` en `clinical_events` → error `ERROR: new row violates row-level security policy`.
 - `AppointmentBooked` de NATS crea automáticamente `Encounter DRAFT` en `clinical_db`.
-- `POST /api/clinical/diagnoses` guarda el evento, actualiza `diagnoses_view`, publica `DiagnosisRecorded` en `SERENAMENTE_CLINICAL`.
+- `POST /api/clinical/diagnoses` guarda el evento, actualiza `diagnoses_view`, publica `DiagnosisRecorded` en `SERENIDAD_CLINICAL`.
 - Paciente A no puede acceder al EHR de paciente B (RLS verificable con dos JWT distintos).
 - `GET /api/clinical/ehr/{patient_id}` devuelve el historial completo paginado.
 
@@ -1090,7 +1090,7 @@ func (c *Consumer) HandleAppointmentBooked(ctx context.Context, msg jetstream.Ms
 
 ### 5.5 Subcapa 2.E — Landing Page: Astro v6.x en Cloudflare Pages
 
-**Prerequisito:** Solo DNS `serenamente.com` apuntando a CF Pages. Puede desarrollarse en paralelo con Fase 2.
+**Prerequisito:** Solo DNS `sereni.dad` apuntando a CF Pages. Puede desarrollarse en paralelo con Fase 2.
 
 #### `astro.config.mjs`
 
@@ -1131,7 +1131,7 @@ export default defineConfig({
 ```yaml
   openfga:
     image: openfga/openfga:latest
-    container_name: serenamente-openfga
+    container_name: serenidad-openfga
     restart: unless-stopped
     depends_on:
       postgres: { condition: service_healthy }
@@ -1146,7 +1146,7 @@ export default defineConfig({
     ports:
       - "8080:8080"    # HTTP API — solo red interna Docker
       - "8081:8081"    # gRPC API — solo red interna Docker
-    networks: [serenamente_net]
+    networks: [serenidad_net]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz | grep -q 'SERVING'"]
       interval: 10s

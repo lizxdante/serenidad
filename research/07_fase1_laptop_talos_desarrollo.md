@@ -2,7 +2,7 @@
 
 ## Guía Exhaustiva de Implementación para Desarrollo
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental Global
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental Global
 **Versión:** 1.0 — Abril 2026
 **Autor:** djca
 **Relación con otros documentos:**
@@ -99,9 +99,9 @@ Este entorno es adecuado cuando:
 │  └───────────────────────────────┘    └────────────────────────┘│
 │                                                                  │
 │  Acceso a servicios desde laptop de desarrollo:                  │
-│   https://api.serenamente.local → 192.168.1.100:443             │
-│   https://app.serenamente.local → 192.168.1.100:443             │
-│   https://kratos.serenamente.local → 192.168.1.100:443          │
+│   https://api.serenidad.local → 192.168.1.100:443             │
+│   https://app.serenidad.local → 192.168.1.100:443             │
+│   https://kratos.serenidad.local → 192.168.1.100:443          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -131,20 +131,20 @@ LAPTOP TALOS — Kubernetes 1.33.x (192.168.1.100)
   Namespace: sealed-secrets
     Sealed Secrets v0.27+ (clave de desarrollo, distinta a prod)
 
-  Namespace: serenamente-data
+  Namespace: serenidad-data
     CloudNativePG v1.x (PostgreSQL 17.4)
       Storage: local-path PVC (disco del laptop)
       Backup: MinIO local (sustituto de B2)
     MinIO (sustituto de Backblaze B2)
 
-  Namespace: serenamente-core
+  Namespace: serenidad-core
     Ory Kratos v1.3.1
       SMTP: Mailpit (no SendGrid)
-      URLs: *.serenamente.local
+      URLs: *.serenidad.local
     IAM Domain Service Go
-      Imagen: registry.serenamente.local/iam-service:dev
+      Imagen: registry.serenidad.local/iam-service:dev
 
-  Namespace: serenamente-dev
+  Namespace: serenidad-dev
     Mailpit (servidor SMTP + webUI de emails)
     Registry (registro local de imágenes Docker)
 
@@ -154,16 +154,16 @@ LAPTOP TALOS — Kubernetes 1.33.x (192.168.1.100)
 
 ### 2.2 Dominios locales usados
 
-Todos los servicios usan el dominio `.serenamente.local`. Este dominio se resuelve únicamente en tu red local mediante entradas en `/etc/hosts` del laptop de desarrollo.
+Todos los servicios usan el dominio `.serenidad.local`. Este dominio se resuelve únicamente en tu red local mediante entradas en `/etc/hosts` del laptop de desarrollo.
 
 | Dominio | Servicio | Puerto | Notas |
 |---------|----------|--------|-------|
-| `api.serenamente.local` | Traefik → todos los microservicios | 443 | Punto de entrada principal |
-| `app.serenamente.local` | Qwik SPA dev server | 5173 | Directo, sin Traefik |
-| `kratos.serenamente.local` | Ory Kratos UI flows | 443 | Via Traefik |
-| `mail.serenamente.local` | Mailpit webUI | 443 | Via Traefik |
-| `registry.serenamente.local` | Registry local | 5000 | Sin TLS (inseguro, ok para dev) |
-| `minio.serenamente.local` | MinIO console | 443 | Via Traefik |
+| `api.serenidad.local` | Traefik → todos los microservicios | 443 | Punto de entrada principal |
+| `app.serenidad.local` | Qwik SPA dev server | 5173 | Directo, sin Traefik |
+| `kratos.serenidad.local` | Ory Kratos UI flows | 443 | Via Traefik |
+| `mail.serenidad.local` | Mailpit webUI | 443 | Via Traefik |
+| `registry.serenidad.local` | Registry local | 5000 | Sin TLS (inseguro, ok para dev) |
+| `minio.serenidad.local` | MinIO console | 443 | Via Traefik |
 
 ---
 
@@ -184,7 +184,7 @@ Esta tabla es la referencia maestra para saber **exactamente qué cambia** y por
 | **FluxCD branch** | `main` | `dev` o rama feature | Dev: aislamiento del código |
 | **Backups B2** | barman-cloud → Backblaze B2 real | barman-cloud → MinIO local | Dev: sin cuenta B2 necesaria |
 | **SMTP / email** | SendGrid (real) | Mailpit (intercepta y muestra en webUI) | Dev: no mandar emails reales |
-| **Kratos URLs base** | `https://api.serenamente.com/auth/` | `https://api.serenamente.local/auth/` | Dev: dominio local |
+| **Kratos URLs base** | `https://api.sereni.dad/auth/` | `https://api.serenidad.local/auth/` | Dev: dominio local |
 | **Qwik SPA** | CF Pages (deploy automático) | `vite dev` en localhost:5173 | Dev: hot-reload inmediato |
 | **BFF Hono** | CF Workers (edge global) | `wrangler dev` en localhost:8787 | Dev: hot-reload inmediato |
 | **Sealed Secrets** | Clave pública de producción | Clave pública de desarrollo (diferente) | Seguridad: claves separadas por entorno |
@@ -413,7 +413,7 @@ mkdir -p infra/clusters/laptop-dev/flux-system
 machine:
   # Configuración de red estática (recomendado para estabilidad de desarrollo)
   network:
-    hostname: serenamente-dev-01
+    hostname: serenidad-dev-01
     interfaces:
       - interface: eth0   # Ajustar al nombre de interfaz del laptop (ip link show)
         addresses:
@@ -435,11 +435,11 @@ machine:
   # Configuración de registry local (definido en Tarea L-03)
   registries:
     mirrors:
-      registry.serenamente.local:
+      registry.serenidad.local:
         endpoints:
-          - "http://registry.serenamente.local:5000"
+          - "http://registry.serenidad.local:5000"
     config:
-      registry.serenamente.local:
+      registry.serenidad.local:
         tls:
           insecureSkipVerify: true   # Registry local sin TLS
 
@@ -483,7 +483,7 @@ talosctl gen secrets \
 echo "infra/clusters/laptop-dev/talos/secrets.yaml" >> .gitignore
 
 # Generar configuración del controlplane
-talosctl gen config serenamente-dev "https://${LAPTOP_IP}:6443" \
+talosctl gen config serenidad-dev "https://${LAPTOP_IP}:6443" \
   --with-secrets infra/clusters/laptop-dev/talos/secrets.yaml \
   --config-patch @infra/clusters/laptop-dev/talos/patches/laptop-dev.yaml \
   --output-dir infra/clusters/laptop-dev/talos/ \
@@ -540,7 +540,7 @@ talosctl kubeconfig \
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig get nodes
 # Output esperado:
 # NAME                  STATUS   ROLES           AGE   VERSION
-# serenamente-dev-01    Ready    control-plane   5m    v1.33.x
+# serenidad-dev-01    Ready    control-plane   5m    v1.33.x
 
 # Verificar pods del sistema
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig get pods -A
@@ -581,17 +581,17 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-data
+  name: serenidad-data
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-core
+  name: serenidad-core
 ---
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-dev
+  name: serenidad-dev
 EOF
 ```
 
@@ -620,7 +620,7 @@ talosctl get cpufreqscalingcontrollers \
 ```
 
 **Criterio de aceptación L-01 + L-02:**
-- `kubectl get nodes` → `serenamente-dev-01 Ready control-plane`
+- `kubectl get nodes` → `serenidad-dev-01 Ready control-plane`
 - `talosctl health` sin errores
 - La IP del laptop es estable (no cambia entre reinicios)
 - Todos los pods de `kube-system` en estado `Running`
@@ -636,7 +636,7 @@ Para desarrollo necesitas poder construir imágenes de tus microservicios Go y d
 - **Velocidad:** Push/pull de imágenes en la red local (Gbps) vs internet (limitado por uplink)
 - **Privacidad:** Las imágenes de desarrollo nunca salen de tu red
 - **Funciona offline:** Desarrollo sin internet
-- **Idéntico al flujo prod:** Prod usa ghcr.io; dev usa registry.serenamente.local:5000. Los Deployments solo cambian la URL del registry.
+- **Idéntico al flujo prod:** Prod usa ghcr.io; dev usa registry.serenidad.local:5000. Los Deployments solo cambian la URL del registry.
 
 ### 7.2 Desplegar el registry
 
@@ -646,7 +646,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: local-registry
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   replicas: 1
   selector:
@@ -687,7 +687,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: registry-pvc
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   accessModes:
     - ReadWriteOnce
@@ -700,7 +700,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: local-registry
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   selector:
     app: local-registry
@@ -723,7 +723,7 @@ El registry local no tiene TLS. Docker necesita saber que está bien usarlo.
 ```json
 // Añadir a /etc/docker/daemon.json (Linux) o Docker Desktop settings:
 {
-  "insecure-registries": ["192.168.1.100:5000", "registry.serenamente.local:5000"]
+  "insecure-registries": ["192.168.1.100:5000", "registry.serenidad.local:5000"]
 }
 ```
 
@@ -732,15 +732,15 @@ El registry local no tiene TLS. Docker necesita saber que está bien usarlo.
 sudo systemctl restart docker
 
 # Añadir entrada en /etc/hosts en la máquina de DESARROLLO:
-echo "192.168.1.100  registry.serenamente.local" | sudo tee -a /etc/hosts
+echo "192.168.1.100  registry.serenidad.local" | sudo tee -a /etc/hosts
 
 # Test: push una imagen de prueba
 docker pull hello-world
-docker tag hello-world registry.serenamente.local:5000/hello-world:test
-docker push registry.serenamente.local:5000/hello-world:test
+docker tag hello-world registry.serenidad.local:5000/hello-world:test
+docker push registry.serenidad.local:5000/hello-world:test
 
 # Verificar que el registry la almacenó:
-curl http://registry.serenamente.local:5000/v2/hello-world/tags/list
+curl http://registry.serenidad.local:5000/v2/hello-world/tags/list
 # → {"name":"hello-world","tags":["test"]}
 ```
 
@@ -756,7 +756,7 @@ Crear un script de conveniencia para el flujo build → push → rollout:
 
 SERVICE=$1
 TAG=${2:-dev}
-REGISTRY="registry.serenamente.local:5000"
+REGISTRY="registry.serenidad.local:5000"
 KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
 
 set -euo pipefail
@@ -773,12 +773,12 @@ docker push "${REGISTRY}/${SERVICE}:${TAG}"
 echo "→ Rolling out in cluster..."
 kubectl --kubeconfig "${KUBECONFIG}" rollout restart \
   deployment/${SERVICE} \
-  -n serenamente-core
+  -n serenidad-core
 
 echo "→ Waiting for rollout..."
 kubectl --kubeconfig "${KUBECONFIG}" rollout status \
   deployment/${SERVICE} \
-  -n serenamente-core \
+  -n serenidad-core \
   --timeout=120s
 
 echo "✓ ${SERVICE}:${TAG} deployed successfully"
@@ -845,7 +845,7 @@ patches:
   - patch: |
       - op: replace
         path: /spec/template/spec/containers/0/image
-        value: registry.serenamente.local:5000/iam-service:dev
+        value: registry.serenidad.local:5000/iam-service:dev
     target:
       kind: Deployment
       name: iam-service
@@ -865,42 +865,42 @@ LAPTOP_IP="192.168.1.100"
 
 sudo tee -a /etc/hosts <<EOF
 
-# Serenamente — entorno de desarrollo local
-${LAPTOP_IP}  api.serenamente.local
-${LAPTOP_IP}  app.serenamente.local
-${LAPTOP_IP}  kratos.serenamente.local
-${LAPTOP_IP}  mail.serenamente.local
-${LAPTOP_IP}  minio.serenamente.local
-${LAPTOP_IP}  registry.serenamente.local
+# Serenidad — entorno de desarrollo local
+${LAPTOP_IP}  api.serenidad.local
+${LAPTOP_IP}  app.serenidad.local
+${LAPTOP_IP}  kratos.serenidad.local
+${LAPTOP_IP}  mail.serenidad.local
+${LAPTOP_IP}  minio.serenidad.local
+${LAPTOP_IP}  registry.serenidad.local
 EOF
 
 # Verificar:
-ping api.serenamente.local
-# → PING api.serenamente.local (192.168.1.100)
+ping api.serenidad.local
+# → PING api.serenidad.local (192.168.1.100)
 ```
 
 ### 9.2 Opción B: dnsmasq (si múltiples máquinas necesitan acceso)
 
-Si tienes un equipo de desarrollo con múltiples máquinas que necesitan resolver `*.serenamente.local`:
+Si tienes un equipo de desarrollo con múltiples máquinas que necesitan resolver `*.serenidad.local`:
 
 ```bash
 # En macOS con Homebrew:
 brew install dnsmasq
 
 # Configurar:
-echo "address=/.serenamente.local/192.168.1.100" >> /usr/local/etc/dnsmasq.conf
+echo "address=/.serenidad.local/192.168.1.100" >> /usr/local/etc/dnsmasq.conf
 
 # Crear directorio de resolvers:
 sudo mkdir -p /etc/resolver
-echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/serenamente.local
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolver/serenidad.local
 
 # Iniciar dnsmasq:
 sudo brew services start dnsmasq
 
 # Verificar:
-dig api.serenamente.local @127.0.0.1
+dig api.serenidad.local @127.0.0.1
 # → ;; ANSWER SECTION:
-# → api.serenamente.local. 0 IN A 192.168.1.100
+# → api.serenidad.local. 0 IN A 192.168.1.100
 ```
 
 ---
@@ -963,17 +963,17 @@ spec:
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: serenamente-dev-ca
+  name: serenidad-dev-ca
   namespace: cert-manager
 spec:
   isCA: true
-  commonName: "Serenamente Dev CA"
-  secretName: serenamente-dev-ca-secret
+  commonName: "Serenidad Dev CA"
+  secretName: serenidad-dev-ca-secret
   duration: 87600h   # 10 años
   renewBefore: 720h  # renovar 30 días antes
   subject:
     organizations:
-      - "Serenamente Dev"
+      - "Serenidad Dev"
     countries:
       - "PE"
   privateKey:
@@ -990,7 +990,7 @@ metadata:
   name: local-ca
 spec:
   ca:
-    secretName: serenamente-dev-ca-secret
+    secretName: serenidad-dev-ca-secret
 ```
 
 ```bash
@@ -1013,49 +1013,49 @@ KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
 
 # Extraer el certificado CA
 kubectl --kubeconfig $KUBECONFIG \
-  get secret serenamente-dev-ca-secret \
+  get secret serenidad-dev-ca-secret \
   -n cert-manager \
-  -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/serenamente-dev-ca.crt
+  -o jsonpath='{.data.tls\.crt}' | base64 -d > /tmp/serenidad-dev-ca.crt
 
 # --- macOS: instalar en el keychain del sistema ---
 sudo security add-trusted-cert \
   -d -r trustRoot \
   -k /Library/Keychains/System.keychain \
-  /tmp/serenamente-dev-ca.crt
+  /tmp/serenidad-dev-ca.crt
 # Reiniciar Chrome/Safari para que tome efecto
 
 # --- Ubuntu/Debian: ---
-sudo cp /tmp/serenamente-dev-ca.crt /usr/local/share/ca-certificates/serenamente-dev-ca.crt
+sudo cp /tmp/serenidad-dev-ca.crt /usr/local/share/ca-certificates/serenidad-dev-ca.crt
 sudo update-ca-certificates
 # Para Chrome: chrome://settings/certificates → Authorities → Import
 
 # --- Windows: ---
-certutil -addstore -f "ROOT" /tmp/serenamente-dev-ca.crt
+certutil -addstore -f "ROOT" /tmp/serenidad-dev-ca.crt
 
 # Verificar con curl:
-curl https://api.serenamente.local/health
+curl https://api.serenidad.local/health
 # → OK (sin error de certificado)
 ```
 
-### 10.4 Certificate para api.serenamente.local
+### 10.4 Certificate para api.serenidad.local
 
 ```yaml
 # infra/clusters/laptop-dev/cert-manager/api-certificate.yaml
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: api-serenamente-local-tls
-  namespace: serenamente-core
+  name: api-serenidad-local-tls
+  namespace: serenidad-core
 spec:
-  secretName: api-serenamente-local-tls
+  secretName: api-serenidad-local-tls
   duration: 2160h     # 90 días
   renewBefore: 360h   # Renovar 15 días antes
-  commonName: "api.serenamente.local"
+  commonName: "api.serenidad.local"
   dnsNames:
-    - api.serenamente.local
-    - kratos.serenamente.local
-    - mail.serenamente.local
-    - minio.serenamente.local
+    - api.serenidad.local
+    - kratos.serenidad.local
+    - mail.serenidad.local
+    - minio.serenidad.local
   issuerRef:
     kind: ClusterIssuer
     name: local-ca
@@ -1156,19 +1156,19 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: api-serenamente-local
-  namespace: serenamente-core
+  name: api-serenidad-local
+  namespace: serenidad-core
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`api.serenamente.local`) && PathPrefix(`/auth`)"
+    - match: "Host(`api.serenidad.local`) && PathPrefix(`/auth`)"
       kind: Rule
       services:
         - name: ory-kratos-public
           port: 4433
 
-    - match: "Host(`api.serenamente.local`) && PathPrefix(`/api/iam`)"
+    - match: "Host(`api.serenidad.local`) && PathPrefix(`/api/iam`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
@@ -1176,7 +1176,7 @@ spec:
         - name: iam-service
           port: 8080
 
-    - match: "Host(`api.serenamente.local`) && PathPrefix(`/api/scheduling`)"
+    - match: "Host(`api.serenidad.local`) && PathPrefix(`/api/scheduling`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
@@ -1184,7 +1184,7 @@ spec:
         - name: scheduling-service
           port: 8081
 
-    - match: "Host(`api.serenamente.local`) && PathPrefix(`/api/clinical`)"
+    - match: "Host(`api.serenidad.local`) && PathPrefix(`/api/clinical`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
@@ -1192,7 +1192,7 @@ spec:
         - name: clinical-service
           port: 8082
 
-    - match: "Host(`api.serenamente.local`) && PathPrefix(`/api/billing`)"
+    - match: "Host(`api.serenidad.local`) && PathPrefix(`/api/billing`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
@@ -1201,50 +1201,50 @@ spec:
           port: 8083
 
     # Health check sin auth (para verificar que Traefik funciona)
-    - match: "Host(`api.serenamente.local`) && Path(`/health`)"
+    - match: "Host(`api.serenidad.local`) && Path(`/health`)"
       kind: Rule
       services:
         - name: iam-service
           port: 8080
 
   tls:
-    secretName: api-serenamente-local-tls   # Creado por cert-manager con local-ca
+    secretName: api-serenidad-local-tls   # Creado por cert-manager con local-ca
 ---
 # IngressRoute para Mailpit
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: mailpit-local
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`mail.serenamente.local`)"
+    - match: "Host(`mail.serenidad.local`)"
       kind: Rule
       services:
         - name: mailpit
           port: 8025
   tls:
-    secretName: api-serenamente-local-tls
+    secretName: api-serenidad-local-tls
 ---
 # IngressRoute para MinIO console
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: minio-local
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`minio.serenamente.local`)"
+    - match: "Host(`minio.serenidad.local`)"
       kind: Rule
       services:
         - name: minio
           port: 9001
   tls:
-    secretName: api-serenamente-local-tls
+    secretName: api-serenidad-local-tls
 ```
 
 ---
@@ -1298,7 +1298,7 @@ BASE64_KEY=$(base64 -w0 /tmp/iam-dev-private.pem)
 # Crear el secret y sellarlo:
 kubectl create secret generic iam-service-secrets \
   --dry-run=client \
-  --namespace serenamente-core \
+  --namespace serenidad-core \
   --from-literal=jwt_private_key_b64="${BASE64_KEY}" \
   -o yaml | \
 kubeseal \
@@ -1360,8 +1360,8 @@ spec:
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: serenamente-pg
-  namespace: serenamente-data
+  name: serenidad-pg
+  namespace: serenidad-data
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:17.4
@@ -1407,8 +1407,8 @@ spec:
   # backup:
   #   retentionPolicy: "7d"
   #   barmanObjectStore:
-  #     destinationPath: "s3://serenamente-pg-backups/wal"
-  #     endpointURL: "http://minio.serenamente-dev.svc.cluster.local:9000"
+  #     destinationPath: "s3://serenidad-pg-backups/wal"
+  #     endpointURL: "http://minio.serenidad-dev.svc.cluster.local:9000"
   #     ... (ver L-15 para configuración completa con MinIO)
 
   monitoring:
@@ -1420,28 +1420,28 @@ spec:
 ```bash
 KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
 PG_POD=$(kubectl --kubeconfig $KUBECONFIG get pod \
-  -n serenamente-data \
-  -l cnpg.io/cluster=serenamente-pg,role=primary \
+  -n serenidad-data \
+  -l cnpg.io/cluster=serenidad-pg,role=primary \
   -o name)
 
 # Verificar que el cluster está listo:
 kubectl --kubeconfig $KUBECONFIG \
-  get cluster serenamente-pg -n serenamente-data
+  get cluster serenidad-pg -n serenidad-data
 # → STATUS=Cluster in healthy state
 
 # Listar databases:
 kubectl --kubeconfig $KUBECONFIG exec \
-  -n serenamente-data $PG_POD \
+  -n serenidad-data $PG_POD \
   -- psql -U postgres -c "\l"
 
 # Verificar extensiones en iam_db:
 kubectl --kubeconfig $KUBECONFIG exec \
-  -n serenamente-data $PG_POD \
+  -n serenidad-data $PG_POD \
   -- psql -U postgres -d iam_db -c "\dx"
 
 # Port-forward para usar herramientas GUI (TablePlus, DBeaver, etc.):
 kubectl --kubeconfig $KUBECONFIG port-forward \
-  -n serenamente-data $PG_POD 5432:5432
+  -n serenidad-data $PG_POD 5432:5432
 
 # Desde TablePlus o DBeaver:
 #   Host: localhost:5432
@@ -1451,8 +1451,8 @@ kubectl --kubeconfig $KUBECONFIG port-forward \
 
 # Obtener la contraseña del usuario postgres:
 kubectl --kubeconfig $KUBECONFIG \
-  get secret serenamente-pg-superuser \
-  -n serenamente-data \
+  get secret serenidad-pg-superuser \
+  -n serenidad-data \
   -o jsonpath='{.data.password}' | base64 -d
 ```
 
@@ -1468,7 +1468,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mailpit
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   replicas: 1
   selector:
@@ -1504,7 +1504,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: mailpit
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   selector:
     app: mailpit
@@ -1522,11 +1522,11 @@ kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
   apply -f infra/clusters/laptop-dev/dev-tools/mailpit.yaml
 
 # Acceder a la WebUI (después de configurar DNS local e IngressRoute):
-# https://mail.serenamente.local
+# https://mail.serenidad.local
 
 # O directamente con port-forward:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  port-forward -n serenamente-dev \
+  port-forward -n serenidad-dev \
   svc/mailpit 8025:8025 &
 # → Abrir http://localhost:8025
 ```
@@ -1536,9 +1536,9 @@ kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
 ## 15. Tarea L-11 — Ory Kratos v1.3.1 (adaptado para local)
 
 La mayor diferencia con producción es:
-1. URLs apuntan a `*.serenamente.local` en vez de `*.serenamente.com`
+1. URLs apuntan a `*.serenidad.local` en vez de `*.sereni.dad`
 2. SMTP apunta a Mailpit en vez de SendGrid
-3. La cookie de sesión usa `.serenamente.local` en vez de `.serenamente.com`
+3. La cookie de sesión usa `.serenidad.local` en vez de `.sereni.dad`
 
 ### 15.1 Sealed Secret para kratos-smtp-dev
 
@@ -1546,8 +1546,8 @@ La mayor diferencia con producción es:
 # Sellar credenciales SMTP para Mailpit (no se necesita password real):
 kubectl create secret generic kratos-smtp-dev \
   --dry-run=client \
-  --namespace serenamente-core \
-  --from-literal=smtp_uri="smtp://mailpit.serenamente-dev.svc.cluster.local:1025/?skip_ssl_verify=true&legacy_ssl=false" \
+  --namespace serenidad-core \
+  --from-literal=smtp_uri="smtp://mailpit.serenidad-dev.svc.cluster.local:1025/?skip_ssl_verify=true&legacy_ssl=false" \
   -o yaml | \
 kubeseal \
   --cert infra/clusters/laptop-dev/sealed-secrets-public-key-DEV.pem \
@@ -1563,7 +1563,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: ory-kratos
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   interval: 1h
   chart:
@@ -1591,9 +1591,9 @@ spec:
               url: file:///etc/config/kratos/schemas/doctor.json
 
         selfservice:
-          default_browser_return_url: "https://app.serenamente.local/"
+          default_browser_return_url: "https://app.serenidad.local/"
           allowed_return_urls:
-            - "https://app.serenamente.local/"
+            - "https://app.serenidad.local/"
             - "http://localhost:5173/"   # Qwik dev server
 
           flows:
@@ -1617,10 +1617,10 @@ spec:
               enabled: true
               config:
                 rp:
-                  display_name: "Serenamente Dev"
-                  id: "serenamente.local"
+                  display_name: "Serenidad Dev"
+                  id: "serenidad.local"
                   origins:
-                    - "https://app.serenamente.local"
+                    - "https://app.serenidad.local"
                     - "http://localhost:5173"   # Para desarrollo sin TLS en el SPA
             password:
               enabled: true   # Activar passwords en dev para facilitar testing
@@ -1628,16 +1628,16 @@ spec:
 
         session:
           cookie:
-            domain: ".serenamente.local"
+            domain: ".serenidad.local"
             same_site: Lax
             secure: true
           lifespan: 168h   # 7 días en dev (más cómodo)
 
         courier:
           smtp:
-            connection_uri: "smtp://mailpit.serenamente-dev.svc.cluster.local:1025/"
-            from_name: "Serenamente Dev"
-            from_address: "dev@serenamente.local"
+            connection_uri: "smtp://mailpit.serenidad-dev.svc.cluster.local:1025/"
+            from_name: "Serenidad Dev"
+            from_address: "dev@serenidad.local"
 
         log:
           level: debug   # Verbose logging en dev
@@ -1646,7 +1646,7 @@ spec:
 
         serve:
           public:
-            base_url: "https://api.serenamente.local/auth/"
+            base_url: "https://api.serenidad.local/auth/"
             port: 4433
           admin:
             port: 4434
@@ -1658,11 +1658,11 @@ spec:
       enabled: false
 
     externalPostgresql:
-      host: "serenamente-pg-rw.serenamente-data.svc.cluster.local"
+      host: "serenidad-pg-rw.serenidad-data.svc.cluster.local"
       port: 5432
       database: "kratos_db"
       username: "postgres"
-      existingSecret: "serenamente-pg-superuser"
+      existingSecret: "serenidad-pg-superuser"
       existingSecretKey: "password"
 
     # Schemas montados como ConfigMap
@@ -1685,11 +1685,11 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kratos-identity-schemas
-  namespace: serenamente-core
+  namespace: serenidad-core
 data:
   patient.json: |
     {
-      "$id": "https://api.serenamente.local/schemas/identity/patient.json",
+      "$id": "https://api.serenidad.local/schemas/identity/patient.json",
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Patient",
       "type": "object",
@@ -1717,7 +1717,7 @@ data:
     }
   doctor.json: |
     {
-      "$id": "https://api.serenamente.local/schemas/identity/doctor.json",
+      "$id": "https://api.serenidad.local/schemas/identity/doctor.json",
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Doctor",
       "type": "object",
@@ -1761,7 +1761,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: iam-service
-  namespace: serenamente-core
+  namespace: serenidad-core
   annotations:
     # Forzar re-deploy con cada push a la rama dev
     fluxcd.io/automated: "true"
@@ -1779,13 +1779,13 @@ spec:
       initContainers:
         # Init container: ejecutar migraciones antes de arrancar el servicio
         - name: migrate
-          image: registry.serenamente.local:5000/iam-service:dev
+          image: registry.serenidad.local:5000/iam-service:dev
           command: ["/app/iam-service", "migrate", "up"]
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: serenamente-pg-app
+                  name: serenidad-pg-app
                   key: uri
           resources:
             requests:
@@ -1793,7 +1793,7 @@ spec:
               cpu: "100m"
       containers:
         - name: iam-service
-          image: registry.serenamente.local:5000/iam-service:dev
+          image: registry.serenidad.local:5000/iam-service:dev
           imagePullPolicy: Always   # Siempre pull en dev para tener la última versión
           ports:
             - name: http
@@ -1804,16 +1804,16 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: serenamente-pg-app
+                  name: serenidad-pg-app
                   key: uri
             - name: KRATOS_ADMIN_URL
-              value: "http://ory-kratos-admin.serenamente-core.svc.cluster.local:4434"
+              value: "http://ory-kratos-admin.serenidad-core.svc.cluster.local:4434"
             - name: KRATOS_PUBLIC_URL
-              value: "http://ory-kratos-public.serenamente-core.svc.cluster.local:4433"
+              value: "http://ory-kratos-public.serenidad-core.svc.cluster.local:4433"
             - name: OPENFGA_URL
-              value: "http://openfga.serenamente-core.svc.cluster.local:8080"   # Fase 3
+              value: "http://openfga.serenidad-core.svc.cluster.local:8080"   # Fase 3
             - name: NATS_URL
-              value: "nats://nats.serenamente-data.svc.cluster.local:4222"   # Fase 2
+              value: "nats://nats.serenidad-data.svc.cluster.local:4222"   # Fase 2
             - name: JWT_PRIVATE_KEY_B64
               valueFrom:
                 secretKeyRef:
@@ -1854,7 +1854,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: iam-service
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   selector:
     app: iam-service
@@ -1883,13 +1883,13 @@ go test ./...
 
 # 4. Seguir los logs del pod actualizado:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  logs -n serenamente-core \
+  logs -n serenidad-core \
   -l app=iam-service \
   -f --since=5m
 
 # 5. Port-forward para debugging directo (sin pasar por Traefik):
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  port-forward -n serenamente-core \
+  port-forward -n serenidad-core \
   svc/iam-service 8080:8080 &
 
 # 6. Testing directo:
@@ -1899,7 +1899,7 @@ curl -X POST http://localhost:8080/api/iam/token/exchange \
 
 # 7. Ver eventos del namespace para debugging:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  get events -n serenamente-core \
+  get events -n serenidad-core \
   --sort-by='.lastTimestamp' | tail -20
 ```
 
@@ -1912,13 +1912,13 @@ Skaffold detecta cambios en el código, hace build automático y re-despliega en
 apiVersion: skaffold/v4beta11
 kind: Config
 metadata:
-  name: serenamente-dev
+  name: serenidad-dev
 
 build:
   local:
     push: true
   artifacts:
-    - image: registry.serenamente.local:5000/iam-service
+    - image: registry.serenidad.local:5000/iam-service
       context: services/iam
       docker:
         dockerfile: Dockerfile
@@ -1932,12 +1932,12 @@ deploy:
   kubectl:
     manifests:
       - infra/clusters/laptop-dev/apps/iam-service-dev.yaml
-  kubeContext: "admin@serenamente-dev"   # Context del kubeconfig dev
+  kubeContext: "admin@serenidad-dev"   # Context del kubeconfig dev
 
 portForward:
   - resourceType: service
     resourceName: iam-service
-    namespace: serenamente-core
+    namespace: serenidad-core
     port: 8080
     localPort: 8080
 ```
@@ -1981,17 +1981,17 @@ npm install
 
 ```toml
 # apps/bff/wrangler.toml
-name = "serenamente-bff"
+name = "serenidad-bff"
 main = "src/index.ts"
 compatibility_date = "2026-04-01"
 
 [vars]
 # En desarrollo, apuntar al API del cluster local:
-API_BASE_URL = "https://api.serenamente.local"
+API_BASE_URL = "https://api.serenidad.local"
 ENVIRONMENT = "development"
 
 # En producción (rama main):
-# API_BASE_URL = "https://api.serenamente.com"
+# API_BASE_URL = "https://api.sereni.dad"
 ```
 
 ```bash
@@ -2016,7 +2016,7 @@ npm install
 # Configurar el endpoint del BFF:
 # En apps/web/.env.local:
 echo "VITE_API_URL=http://localhost:8787" > .env.local
-echo "VITE_KRATOS_URL=https://api.serenamente.local/auth" >> .env.local
+echo "VITE_KRATOS_URL=https://api.serenidad.local/auth" >> .env.local
 
 # Ejecutar dev server:
 npm run dev
@@ -2039,7 +2039,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: minio
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   replicas: 1
   selector:
@@ -2068,7 +2068,7 @@ spec:
         - name: MINIO_ROOT_PASSWORD
           value: "minioadmin123"  # Solo dev, sin secretos reales
         - name: MINIO_DEFAULT_BUCKETS
-          value: "serenamente-pg-backups"
+          value: "serenidad-pg-backups"
         volumeMounts:
         - name: minio-data
           mountPath: /data
@@ -2088,7 +2088,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: minio-pvc
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   accessModes:
     - ReadWriteOnce
@@ -2101,7 +2101,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: minio
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   selector:
     app: minio
@@ -2124,8 +2124,8 @@ Una vez MinIO está corriendo, actualizar el Cluster CRD para activar backup:
   backup:
     retentionPolicy: "3d"   # Solo 3 días en dev (ahorra disco)
     barmanObjectStore:
-      destinationPath: "s3://serenamente-pg-backups/wal"
-      endpointURL: "http://minio.serenamente-dev.svc.cluster.local:9000"
+      destinationPath: "s3://serenidad-pg-backups/wal"
+      endpointURL: "http://minio.serenidad-dev.svc.cluster.local:9000"
       s3Credentials:
         accessKeyId:
           name: minio-credentials
@@ -2139,21 +2139,21 @@ Una vez MinIO está corriendo, actualizar el Cluster CRD para activar backup:
 # Crear el Secret con las credenciales de MinIO (para dev, sin sellar):
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
   create secret generic minio-credentials \
-  --namespace serenamente-data \
+  --namespace serenidad-data \
   --from-literal=access_key_id=minioadmin \
   --from-literal=secret_access_key=minioadmin123
 
 # Forzar un backup manual para verificar:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  cnpg backup serenamente-pg \
-  -n serenamente-data
+  cnpg backup serenidad-pg \
+  -n serenidad-data
 
 # Ver el estado del backup:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  get backup -n serenamente-data
+  get backup -n serenidad-data
 
 # Ver en la consola de MinIO:
-# https://minio.serenamente.local → console
+# https://minio.serenidad.local → console
 ```
 
 ---
@@ -2165,7 +2165,7 @@ kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
 ```bash
 # 1. Verificar que el laptop Talos está up y el cluster saludable:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig get nodes
-# → serenamente-dev-01   Ready
+# → serenidad-dev-01   Ready
 
 # 2. Verificar que todos los pods están corriendo:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig get pods -A
@@ -2183,9 +2183,9 @@ cd apps/web && npm run dev
 
 # Terminal 3 — Port-forward para acceso directo a PostgreSQL (si necesario):
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  port-forward -n serenamente-data \
+  port-forward -n serenidad-data \
   $(kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig get pod \
-    -n serenamente-data -l cnpg.io/cluster=serenamente-pg,role=primary \
+    -n serenidad-data -l cnpg.io/cluster=serenidad-pg,role=primary \
     -o name) 5432:5432 &
 
 # Terminal 4 — k9s (monitor del cluster):
@@ -2207,24 +2207,24 @@ go test ./internal/... -v
 
 # Fase 4: Ver logs en tiempo real:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  logs -n serenamente-core \
+  logs -n serenidad-core \
   -l app=iam-service \
   -f --tail=100
 
 # Fase 5: Testing de integración via API:
 # (Con Traefik corriendo)
-TOKEN=$(curl -s -X POST https://api.serenamente.local/api/iam/token/exchange \
+TOKEN=$(curl -s -X POST https://api.serenidad.local/api/iam/token/exchange \
   -H "Content-Type: application/json" \
   -d '{"kratos_session_token":"<kratos-session>"}' | jq -r .token)
 
 curl -H "Authorization: Bearer $TOKEN" \
-  https://api.serenamente.local/api/iam/users/me
+  https://api.serenidad.local/api/iam/users/me
 
 # Fase 6: Si hay errores, inspeccionar directamente:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  exec -n serenamente-core \
+  exec -n serenidad-core \
   -it $(kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-    get pod -n serenamente-core -l app=iam-service -o name | head -1) \
+    get pod -n serenidad-core -l app=iam-service -o name | head -1) \
   -- /bin/sh
 # Nota: el contenedor debe tener un shell (Alpine base image)
 ```
@@ -2242,7 +2242,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: dev-workspace
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   containers:
   - name: dev
@@ -2274,7 +2274,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: dev-workspace-pvc
-  namespace: serenamente-dev
+  namespace: serenidad-dev
 spec:
   accessModes: [ReadWriteOnce]
   storageClassName: local-path
@@ -2288,13 +2288,13 @@ spec:
 kubectl apply -f infra/clusters/laptop-dev/dev-tools/dev-pod.yaml
 
 # Entrar al pod:
-kubectl exec -it -n serenamente-dev dev-workspace -- bash
+kubectl exec -it -n serenidad-dev dev-workspace -- bash
 
 # Dentro del pod: instalar herramientas y clonar repo:
 apt-get update && apt-get install -y git curl nodejs npm
 curl -sL https://talos.dev/install | sh
 # Clonar el monorepo:
-git clone https://github.com/serenamente/serenidad-platform /workspace
+git clone https://github.com/serenidad/serenidad-platform /workspace
 
 # Desde dentro del pod puedes hacer kubectl, go build, etc.
 ```
@@ -2339,32 +2339,32 @@ k9s --kubeconfig infra/clusters/laptop-dev/kubeconfig
 # Arrancar todos los port-forwards de desarrollo de una vez
 
 KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
-SERENAMENTE_PG_POD=$(kubectl --kubeconfig $KUBECONFIG get pod \
-  -n serenamente-data \
-  -l cnpg.io/cluster=serenamente-pg,role=primary \
+SERENIDAD_PG_POD=$(kubectl --kubeconfig $KUBECONFIG get pod \
+  -n serenidad-data \
+  -l cnpg.io/cluster=serenidad-pg,role=primary \
   -o name 2>/dev/null | head -1)
 
 # PostgreSQL (para TablePlus/DBeaver/psql directo)
 kubectl --kubeconfig $KUBECONFIG port-forward \
-  -n serenamente-data \
-  $SERENAMENTE_PG_POD 5432:5432 &
+  -n serenidad-data \
+  $SERENIDAD_PG_POD 5432:5432 &
 echo "PostgreSQL disponible en localhost:5432"
 
 # Kratos Admin API (para inspeccionar identidades)
 kubectl --kubeconfig $KUBECONFIG port-forward \
-  -n serenamente-core \
+  -n serenidad-core \
   svc/ory-kratos-admin 4434:4434 &
 echo "Kratos Admin API en localhost:4434"
 
 # IAM Service directo (sin Traefik)
 kubectl --kubeconfig $KUBECONFIG port-forward \
-  -n serenamente-core \
+  -n serenidad-core \
   svc/iam-service 8080:8080 &
 echo "IAM Service en localhost:8080"
 
 # Mailpit UI
 kubectl --kubeconfig $KUBECONFIG port-forward \
-  -n serenamente-dev \
+  -n serenidad-dev \
   svc/mailpit 8025:8025 &
 echo "Mailpit UI en http://localhost:8025"
 
@@ -2376,20 +2376,20 @@ wait
 ### 21.3 Ver logs agregados de todos los servicios
 
 ```bash
-# Ver logs de todos los servicios en serenamente-core simultáneamente:
+# Ver logs de todos los servicios en serenidad-core simultáneamente:
 # Instalar stern (log aggregator multi-pod):
 brew install stern  # macOS
 
 # Ver todos los logs del namespace:
 stern --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  -n serenamente-core \
+  -n serenidad-core \
   --all-containers \
   --color always \
   ".*"
 
 # Solo logs del IAM service:
 stern --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  -n serenamente-core \
+  -n serenidad-core \
   iam-service
 ```
 
@@ -2443,11 +2443,11 @@ kubectl --kubeconfig $KUBECONFIG apply -f \
 ```bash
 # Verificar que el certificado fue emitido:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  get certificate -n serenamente-core
+  get certificate -n serenidad-core
 
 # Si el estado no es READY=True:
 kubectl --kubeconfig infra/clusters/laptop-dev/kubeconfig \
-  describe certificate api-serenamente-local-tls -n serenamente-core
+  describe certificate api-serenidad-local-tls -n serenidad-core
 # Buscar la sección "Events" para ver el error de cert-manager
 
 # Si el certificado está emitido pero el browser no confía:
@@ -2462,12 +2462,12 @@ KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
 
 # Ver estado del cluster:
 kubectl --kubeconfig $KUBECONFIG \
-  describe cluster serenamente-pg -n serenamente-data
+  describe cluster serenidad-pg -n serenidad-data
 
 # Ver logs del pod PostgreSQL:
 kubectl --kubeconfig $KUBECONFIG \
-  logs -n serenamente-data \
-  -l cnpg.io/cluster=serenamente-pg \
+  logs -n serenidad-data \
+  -l cnpg.io/cluster=serenidad-pg \
   --all-containers
 
 # Problema frecuente: "local-path" storage class no existe
@@ -2527,7 +2527,7 @@ KUBECONFIG="infra/clusters/laptop-dev/kubeconfig"
 
 echo "=== 1. CLUSTER KUBERNETES ==="
 kubectl --kubeconfig $KUBECONFIG get nodes
-# ✓ serenamente-dev-01 Ready
+# ✓ serenidad-dev-01 Ready
 
 echo "=== 2. CERT-MANAGER ==="
 kubectl --kubeconfig $KUBECONFIG get clusterissuer local-ca
@@ -2538,18 +2538,18 @@ kubectl --kubeconfig $KUBECONFIG get pods -n traefik
 # ✓ traefik-* Running
 
 echo "=== 4. TLS LOCAL ==="
-curl -s -o /dev/null -w "%{http_code}" https://api.serenamente.local/health
+curl -s -o /dev/null -w "%{http_code}" https://api.serenidad.local/health
 # ✓ 200 (o 404 — lo que importa es que TLS es válido, no error de certificado)
 
 echo "=== 5. CLOUDNATIVEPG ==="
-kubectl --kubeconfig $KUBECONFIG get cluster serenamente-pg -n serenamente-data
+kubectl --kubeconfig $KUBECONFIG get cluster serenidad-pg -n serenidad-data
 # ✓ STATUS=Cluster in healthy state
 
 echo "=== 6. BASES DE DATOS ==="
 kubectl --kubeconfig $KUBECONFIG exec \
-  -n serenamente-data \
-  $(kubectl --kubeconfig $KUBECONFIG get pod -n serenamente-data \
-    -l cnpg.io/cluster=serenamente-pg,role=primary -o name) \
+  -n serenidad-data \
+  $(kubectl --kubeconfig $KUBECONFIG get pod -n serenidad-data \
+    -l cnpg.io/cluster=serenidad-pg,role=primary -o name) \
   -- psql -U postgres -c "SELECT datname FROM pg_database WHERE datname IN ('iam_db','scheduling_db','clinical_db','billing_db','kratos_db','openfga_db');"
 # ✓ Las 6 databases listadas
 
@@ -2562,23 +2562,23 @@ curl -s http://localhost:8025/api/v1/messages | jq .total
 # ✓ Número (0 si no hay emails aún) — sin error de conexión
 
 echo "=== 9. ORY KRATOS ==="
-kubectl --kubeconfig $KUBECONFIG get pods -n serenamente-core -l app.kubernetes.io/name=kratos
+kubectl --kubeconfig $KUBECONFIG get pods -n serenidad-core -l app.kubernetes.io/name=kratos
 # ✓ kratos-* Running
 
 echo "=== 10. IAM SERVICE ==="
-kubectl --kubeconfig $KUBECONFIG get pods -n serenamente-core -l app=iam-service
+kubectl --kubeconfig $KUBECONFIG get pods -n serenidad-core -l app=iam-service
 # ✓ iam-service-* Running
 
 echo "=== 11. REGISTRY LOCAL ==="
-curl -s http://registry.serenamente.local:5000/v2/ | jq .
+curl -s http://registry.serenidad.local:5000/v2/ | jq .
 # ✓ {} (registry vacío pero respondiendo)
 
 echo "=== 12. FLUJO COMPLETO ==="
 # Registro de un paciente test:
-curl -X POST https://api.serenamente.local/auth/self-service/registration/api
+curl -X POST https://api.serenidad.local/auth/self-service/registration/api
 # ✓ Retorna un flow de Kratos (JSON con action, ui, etc.)
 # Verificar en Mailpit que el email de verificación llegó:
-# https://mail.serenamente.local (o localhost:8025)
+# https://mail.serenidad.local (o localhost:8025)
 ```
 
 ---
@@ -2601,7 +2601,7 @@ infra/
 │   │   ├── clusterissuer-local-ca.yaml   (Self-signed en vez de ACME)
 │   │   ├── cnpg-local-storage-patch.yaml (local-path en vez de hcloud-volumes)
 │   │   ├── kratos-urls-patch.yaml        (*.local en vez de *.com)
-│   │   └── image-registry-patch.yaml     (registry.serenamente.local en vez de ghcr.io)
+│   │   └── image-registry-patch.yaml     (registry.serenidad.local en vez de ghcr.io)
 │   └── hetzner-prod/        ← Parches específicos de producción
 │       ├── kustomization.yaml
 │       ├── traefik-loadbalancer.yaml

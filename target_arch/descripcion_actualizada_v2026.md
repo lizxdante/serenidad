@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital |
+| **Proyecto** | Serenidad — Clínica Digital |
 | **Versión** | v2026 — Post-Investigación |
 | **Fecha** | Abril 2026 |
 

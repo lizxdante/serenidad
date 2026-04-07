@@ -208,7 +208,7 @@
 
 **Como** visitante del sitio,  
 **quiero** navegar por páginas informativas sobre servicios de salud mental con diseño profesional y accesible,  
-**para que** pueda entender la oferta de Serenamente y decidir si es adecuado para mí.
+**para que** pueda entender la oferta de Serenidad y decidir si es adecuado para mí.
 
 ### Contexto técnico
 
@@ -238,7 +238,7 @@
   ---
 
   <BaseLayout
-    title="Serenamente — Salud Mental Accesible y Profesional"
+    title="Serenidad — Salud Mental Accesible y Profesional"
     description="Clínica digital de salud mental. Terapia online con psicólogos certificados. Accesible, confidencial, y centrado en tu bienestar."
   >
     <!-- Hero Section -->
@@ -277,7 +277,7 @@
     <section class="py-20 bg-gray-50">
       <div class="container mx-auto px-4">
         <h2 class="text-4xl font-display font-bold text-center mb-12">
-          ¿Por qué elegir Serenamente?
+          ¿Por qué elegir Serenidad?
         </h2>
         
         <div class="grid md:grid-cols-3 gap-8">
@@ -322,7 +322,7 @@
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "MedicalOrganization",
-      "name": "Serenamente",
+      "name": "Serenidad",
       "url": "https://sereni.dad",
       "logo": "https://sereni.dad/logo.png",
       "description": "Clínica digital de salud mental con terapia online profesional",
@@ -367,7 +367,7 @@
   ---
 
   <BaseLayout
-    title="Servicios de Salud Mental — Serenamente"
+    title="Servicios de Salud Mental — Serenidad"
     description="Terapia individual, de pareja y familiar online. Profesionales certificados especializados en ansiedad, depresión, y bienestar emocional."
   >
     <section class="py-20">
@@ -408,7 +408,7 @@
   ---
 
   <BaseLayout
-    title="Contacto — Serenamente"
+    title="Contacto — Serenidad"
     description="¿Tienes preguntas? Contáctanos y un miembro de nuestro equipo te responderá pronto."
   >
     <section class="py-20">
