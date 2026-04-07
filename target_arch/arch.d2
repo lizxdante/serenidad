@@ -1,0 +1,388 @@
+# =============================================================
+# arch.d2 — Arquitectura "Build It Right The First Time" v3.1
+# Clinica Global de Salud Mental — Stack Definitivo (Abril 2026)
+# =============================================================
+# Render: d2 --layout=elk --theme=0 arch.d2 arch.svg
+# Install: https://d2lang.com/tour/install
+# =============================================================
+
+direction: down
+
+# =============================================================
+# CLOUDFLARE EDGE
+# =============================================================
+cloudflare: Cloudflare Edge — Tier Gratuito {
+  style.fill: "#FFF8E1"
+  style.stroke: "#F38020"
+  style.stroke-width: 2
+
+  direction: right
+
+  front: |md
+    **[CF Pages] Qwik v2.0 SPA**
+    Portal Médico y Paciente
+    Resumability: TTI ~50ms
+    @qwik.dev/qwik \| TS 6.0
+  | {
+    style.fill: "#F5F5F5"
+    style.stroke: "#BDBDBD"
+  }
+
+  astro: |md
+    **[CF Pages] Astro v6.x**
+    Landing Page y Marketing
+    Lighthouse 99.2 — Zero JS
+    TS 6.0 \| SEO Óptimo
+  | {
+    style.fill: "#F5F5F5"
+    style.stroke: "#BDBDBD"
+  }
+
+  bff: |md
+    **[CF Workers] BFF / Hono v4.x**
+    JWT Verify EdDSA
+    Routing y Edge Cache
+    100K req/día gratuito
+  | {
+    style.fill: "#ECEFF1"
+    style.stroke: "#90A4AE"
+  }
+
+  front -> bff: HTTPS / WebSocket
+  astro -> bff: HTTPS
+}
+
+# =============================================================
+# HETZNER CX32
+# =============================================================
+hetzner: "Hetzner CX32 — Talos Linux v1.10.x | Kubernetes 1.33.x | ~$7.50/mes" {
+  style.fill: "#F8F9FA"
+  style.stroke: "#455A64"
+  style.stroke-width: 2
+
+  direction: down
+
+  traefik: |md
+    **[Traefik v3.x] Ingress Controller**
+    TLS: cert-manager + Let's Encrypt
+    ForwardAuth Middleware → IAM Service
+    IngressRoute CRDs por namespace
+  | {
+    style.fill: "#ECEFF1"
+    style.stroke: "#90A4AE"
+  }
+
+  # --- Servicios de Dominio (grid 2x2) ---
+  domain: Dominio Médico y Negocio {
+    style.fill: transparent
+    style.stroke: "#90A4AE"
+    style.stroke-dash: 5
+    grid-columns: 2
+
+    iam: |md
+      **[1] IAM & Identity Service**
+      Ory Kratos v1.3.1 AuthN
+      OpenFGA v1.x AuthZ Zanzibar
+      Go 1.25.x + Chi v5 + pgxpool
+    | {
+      style.fill: "#FF5722"
+      style.font-color: white
+    }
+
+    scheduling: |md
+      **[2] Scheduling Service**
+      Go 1.25.x + Chi v5 + pgxpool
+      FHIR R4 Appointment output
+      EXCLUDE USING GIST en PG17
+    | {
+      style.fill: "#2196F3"
+      style.font-color: white
+    }
+
+    clinical: |md
+      **[2] Clinical Record Service**
+      Go 1.25.x + Chi v5 + pgxpool
+      openEHR Canonical JSON
+      Event Store puro + RLS
+    | {
+      style.fill: "#2196F3"
+      style.font-color: white
+    }
+
+    billing: |md
+      **[3] Billing & Ops Service**
+      Go 1.25.x + Chi v5 + pgxpool
+      Multi-pasarela de pago
+      Izipay · Stripe · Conekta
+    | {
+      style.fill: "#9C27B0"
+      style.font-color: white
+    }
+  }
+
+  # --- NATS JetStream ---
+  nats: |md
+    **NATS JetStream v2.11.x**
+    Message Broker Apache 2.0
+    nats.go v1.50.0
+    Eventos en Protobuf proto3
+  | {
+    style.fill: "#27AE60"
+    style.font-color: white
+  }
+
+  # --- Bases de Datos (grid 2x2) ---
+  databases: "Persistencia y Event Stores — PostgreSQL 17.4" {
+    style.fill: transparent
+    style.stroke: "#78909C"
+    style.stroke-dash: 5
+    grid-columns: 2
+
+    db_iam: DB_Identity {
+      shape: cylinder
+      label: |md
+        **DB_Identity**
+        Kratos DB + OpenFGA DB
+        Domain profiles · Outbox events
+        RLS Policies
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+
+    db_sched: DB_Scheduling {
+      shape: cylinder
+      label: |md
+        **DB_Scheduling**
+        Appointments TSTZRANGE
+        EXCLUDE GIST constraints
+        Outbox Protobuf · FHIR JSONB
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+
+    db_clin: DB_Clinical {
+      shape: cylinder
+      label: |md
+        **DB_Clinical — Event Store PURO**
+        NUNCA UPDATE ni DELETE
+        BYTEA Protobuf · openEHR JSON
+        PK: UUIDv7 (PG17 nativo)
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+
+    db_bill: DB_Billing {
+      shape: cylinder
+      label: |md
+        **DB_Billing**
+        Transacciones Financieras
+        Append-only inmutable
+        Currency ISO 4217
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+  }
+
+  # --- Observabilidad ---
+  obs: |md
+    **PLG Stack — Observabilidad**
+    Prometheus v3.x · Loki v3.x + Promtail
+    Tempo v2.9+ · Grafana v11.x
+    Alertmanager v0.27+ → Telegram bot
+  | {
+    style.fill: "#607D8B"
+    style.font-color: white
+  }
+}
+
+# =============================================================
+# BACKBLAZE B2
+# =============================================================
+b2: Backblaze B2 {
+  shape: cloud
+  label: |md
+    **Backblaze B2**
+    WAL continuo + daily backup
+    ~0.05 USD/mes
+  |
+  style.fill: "#E3F2FD"
+  style.stroke: "#1565C0"
+}
+
+# =============================================================
+# CONEXIONES
+# =============================================================
+
+# CF → Hetzner
+cloudflare.bff -> hetzner.traefik: "HTTPS api.serenamente.com :443 TLS 1.3"
+
+# Traefik → Servicios (ForwardAuth pattern)
+hetzner.traefik -> hetzner.domain.iam: "ForwardAuth → /internal/validate-token"
+hetzner.traefik -> hetzner.domain.scheduling: /api/scheduling
+hetzner.traefik -> hetzner.domain.clinical: /api/clinical
+hetzner.traefik -> hetzner.domain.billing: /api/billing
+
+# Servicios → Bases de datos (síncronos)
+hetzner.domain.iam -> hetzner.databases.db_iam: pgx/v5 pgxpool
+hetzner.domain.scheduling -> hetzner.databases.db_sched: pgx/v5 pgxpool
+hetzner.domain.clinical -> hetzner.databases.db_clin: pgx/v5 pgxpool
+hetzner.domain.billing -> hetzner.databases.db_bill: pgx/v5 pgxpool
+
+# Outbox → NATS (asíncronos, punteados)
+hetzner.databases.db_iam -> hetzner.nats: "Outbox: UserRegistered · DoctorOnboarded" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+hetzner.databases.db_sched -> hetzner.nats: "Outbox: AppointmentBooked · AppointmentCancelled" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+hetzner.databases.db_clin -> hetzner.nats: "Outbox: DiagnosisRecorded · ConsultationFinished" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+
+# NATS → Consumidores (asíncronos, punteados)
+hetzner.nats -> hetzner.domain.clinical: "Consume: AppointmentBooked" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+hetzner.nats -> hetzner.domain.billing: "Consume: ConsultationFinished" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+hetzner.nats -> hetzner.domain.scheduling: "Consume: DoctorOffboarded" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+
+# Backups (punteados)
+hetzner.databases.db_iam -> b2: backup {
+  style.stroke-dash: 5
+}
+hetzner.databases.db_clin -> b2: backup {
+  style.stroke-dash: 5
+}
+hetzner.databases.db_bill -> b2: backup {
+  style.stroke-dash: 5
+}
+
+# Observabilidad — scraping (punteados, color sutil)
+hetzner.obs -> hetzner.domain.iam: "Scrape /metrics" {
+  style.stroke-dash: 3
+  style.stroke: "#90A4AE"
+}
+hetzner.obs -> hetzner.domain.scheduling: "Scrape /metrics" {
+  style.stroke-dash: 3
+  style.stroke: "#90A4AE"
+}
+hetzner.obs -> hetzner.domain.clinical: "Scrape /metrics" {
+  style.stroke-dash: 3
+  style.stroke: "#90A4AE"
+}
+hetzner.obs -> hetzner.domain.billing: "Scrape /metrics" {
+  style.stroke-dash: 3
+  style.stroke: "#90A4AE"
+}
+hetzner.obs -> hetzner.nats: "Scrape :8222" {
+  style.stroke-dash: 3
+  style.stroke: "#90A4AE"
+}
+
+# =============================================================
+# NOTAS
+# =============================================================
+
+note_ts: |md
+  **TypeScript 6.0 (released March 2026)**
+  Breaking changes vs TS 5.x.
+
+  **Qwik v2.0 — @qwik.dev/qwik**
+  Breaking change vs v1.x · Nuevo package scope.
+
+  **Astro v6.x**
+  Requerido para soporte Qwik v2.
+| {
+  near: cloudflare.front
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_iam: |md
+  **OpenFGA v1.x — Zanzibar (ADR-004)**
+  Reemplaza Ory Keto · DSL más expresivo.
+  Playground: play.fga.dev · Backing: Okta/Auth0.
+
+  **Kratos v1.3.1 — Passkeys**
+  WebAuthn, MFA, cero contraseñas por defecto.
+| {
+  near: hetzner.domain.iam
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_nats: |md
+  **Protobuf proto3 + buf.build CLI**
+  Schema evolution nativa · Sin Schema Registry.
+  .proto files en Git = contrato.
+
+  BREAKING: v2.11 tiene cambios vs v2.10.x.
+  Ver upgrade guide oficial.
+| {
+  near: hetzner.nats
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_db_clin: |md
+  **Event Store Puro (Inmutable)**
+  NUNCA UPDATE ni DELETE.
+  openEHR Canonical JSON en BYTEA.
+  PK = UUIDv7 (PG17 nativo).
+  Estado = replay desde eventos.
+| {
+  near: hetzner.databases.db_clin
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+order_note: |md
+  **ORDEN FINAL DE IMPLEMENTACIÓN**
+  Ref: plans/05_orden_implementacion_capas_exhaustivo.md
+
+  **FASE 1** — Kubernetes + IAM + Gateway (~$7.50/mes)
+  1.A Hetzner CX32 + Talos v1.10.x + k8s 1.33.x + FluxCD v2.x bootstrap
+  1.B cert-manager v1.x + Traefik v3.x + Sealed Secrets
+  1.C CloudNativePG v1.x + PostgreSQL 17.4 (6 databases)
+  1.D Protobuf schemas + buf.build CLI
+  1.E Ory Kratos v1.3.1 (HelmRelease ory/kratos)
+  1.F IAM Domain Service Go — JWT Ed25519 + Outbox Worker + ForwardAuth
+  1.G BFF: CF Workers + Hono v4.x   [CF Edge]
+  1.H Qwik v2.0 SPA en CF Pages     [CF Edge]
+  1.I CloudNativePG ScheduledBackup CRD → B2
+
+  **FASE 2** — Motor Médico (~$16/mes)
+  2.A NATS JetStream v2.11.x (Helm: nats/nats)
+  2.B Outbox Worker (librería Go compartida)
+  2.C Scheduling Service Go k8s
+  2.D Clinical Record Service Go k8s
+  2.E Landing Page Astro v6.x       [CF Edge]
+
+  **FASE 3** — Plataforma Completa (~$22-27/mes)
+  3.A OpenFGA v1.x (Helm: openfga/openfga)
+  3.B Billing & Ops Service Go k8s
+  3.C kube-prometheus-stack v82.x + Loki v3.x + Tempo v2.9+
+  3.D Alertmanager v0.27+ → Telegram bot
+| {
+  shape: page
+  style.fill: "#E8F5E9"
+  style.stroke: "#2E7D32"
+}

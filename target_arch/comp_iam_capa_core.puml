@@ -1,0 +1,195 @@
+@startuml
+!theme plain
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam padding 8
+skinparam defaultTextAlignment center
+
+title Arquitectura Granular: IAM Component v3.1\nIdentity and Access Management - Versiones Actualizadas (Abril 2026)
+
+' --- PALETA DE COLORES ---
+!define COLOR_GO     #00ADD8
+!define COLOR_ORY    #5528FF
+!define COLOR_FGA    #FF6B35
+!define COLOR_DB     #CFD8DC
+!define COLOR_NATS   #27AE60
+!define COLOR_FRONT  #F5F5F5
+
+skinparam component {
+  BackgroundColor<<Go>>  COLOR_GO
+  FontColor<<Go>>        white
+  BackgroundColor<<Ory>> COLOR_ORY
+  FontColor<<Ory>>       white
+  BackgroundColor<<FGA>> COLOR_FGA
+  FontColor<<FGA>>       white
+  BackgroundColor<<Ext>> COLOR_FRONT
+  BorderColor<<Ext>>     #BDBDBD
+}
+
+skinparam database {
+  BackgroundColor<<Storage>> COLOR_DB
+  BorderColor<<Storage>>     #78909C
+}
+
+skinparam rectangle {
+  BackgroundColor transparent
+  BorderColor     #455A64
+  BorderStyle     dashed
+}
+
+' --- ACTORES EXTERNOS AL IAM ---
+component "Traefik v3.x ForwardAuth\ny CF Workers Hono v4.x BFF" <<Ext>> as External
+component "NATS JetStream v2.11.x\nnats.go v1.50.0\nEvent Bus Global" <<Ext>> as NATS
+component "Scheduling, Clinical\ny demas Servicios\nGo 1.25.x" <<Ext>> as CoreServices
+
+' --- IAM BOUNDED CONTEXT ---
+rectangle "IAM Bounded Context - Microservicio Aislado" {
+
+  component "IAM Domain Service\nGo 1.25.x + Chi v5.x + pgx v5\n--\nOrquestador de Identidad.\nEnriquece JWTs con UUIDv7.\nGestiona DIDs (did:web).\nPublica eventos via Outbox.\ngolang-migrate v4.x" <<Go>> as GoIAM
+
+  rectangle "Ory Stack - Autenticacion" {
+    component "Ory Kratos v1.3.1\nAuthN\n--\nPasskeys WebAuthn.\nGestion de Sesiones y MFA.\nCero contrasenas por defecto.\nFlows self-service.\nSAML + OIDC disponibles." <<Ory>> as Kratos
+  }
+
+  rectangle "OpenFGA v1.x - Autorizacion Zanzibar" {
+    component "OpenFGA v1.x\nAuthZ\n--\nMotor Zanzibar (Google).\nRelation Tuples tipadas.\nDSL de modelado expresivo.\nBacking: Okta/Auth0.\nPlayground: play.fga.dev\nApache 2.0 | $0 self-hosted" <<FGA>> as OpenFGA
+  }
+
+  rectangle "IAM Database Cluster - PostgreSQL 17.4" {
+
+    database "Kratos DB\n(PostgreSQL 17.4)\n--\nCredenciales y hashes.\nSesiones activas.\nIdentity schemas.\nEsquema interno Ory Kratos." <<Storage>> as DB_Kratos
+
+    database "OpenFGA DB\n(PostgreSQL 17.4)\n--\nRelation Tuples.\nGrafos de permisos.\nStore ID por organizacion.\nConsistencia configurable." <<Storage>> as DB_OpenFGA
+
+    database "IAM Domain DB\n(PostgreSQL 17.4)\n--\nOutbox Table para NATS.\nPerfiles de usuarios.\nUUIDv7 como PK (PG17 nativo).\nRLS Policies activas." <<Storage>> as DB_Domain
+
+  }
+}
+
+' --- FLUJOS DE COMUNICACION ---
+
+' 1. Flujo de Login
+External -down-> Kratos : "1. Challenge Passkey / WebAuthn\n(FIDO2 / WebAuthn Level 3)"
+Kratos -down-> DB_Kratos : "Verifica Credencial FIDO2\npgx v5 pgxpool"
+Kratos -up-> External : "Set-Cookie / Session Token\n(CSRF protegido)"
+
+' 2. Flujo de Acceso Autenticado
+External -down-> GoIAM : "2. Peticion autenticada\nSession Token en header"
+GoIAM -left-> Kratos : "Verifica Sesion activa\n(Kratos Admin API :4434)"
+GoIAM -right-> OpenFGA : "Check: can doctor:X\nwrite on clinical_record:Y?"
+OpenFGA -down-> DB_OpenFGA : "Evalua Grafo de Relaciones\npgx v5 pgxpool"
+
+' 3. Persistencia y Outbox
+GoIAM -down-> DB_Domain : "TX atomica:\nInserta Perfil + Outbox Event\nEN MISMA TRANSACCION PG"
+
+' 4. Emision de Eventos
+DB_Domain .up.> NATS : "Outbox Worker\nnats.go v1.50.0\nPublica [UserRegistered]\n[DoctorOnboarded]"
+NATS ..> CoreServices : "Distribuye eventos\na toda la clinica"
+
+' 5. Verificacion en otros servicios
+CoreServices .left.> GoIAM : "Valida JWT Ed25519\nvia clave publica\n(verificacion asincrona)"
+
+' --- NOTAS ---
+note right of GoIAM
+  **El JWT Enriquecido (Ed25519):**
+  GoIAM toma la sesion de Kratos,
+  inyecta UUIDv7 + rol + tenant_id
+  y firma con clave Ed25519.
+  
+  golang-jwt/jwt v5.x para firma.
+  google/uuid v1.6+ para UUIDv7.
+  
+  Claims del JWT:
+    sub:       UUIDv7 del usuario
+    role:      doctor|patient|admin
+    tenant_id: UUIDv7 de la org
+    did:       did:web:serenamente.com:...
+    iat / exp: timestamps RFC 3339
+  
+  Este JWT alimenta el RLS de
+  todos los PostgreSQL del sistema
+  via SET LOCAL app.user_id = ...
+end note
+
+note right of OpenFGA
+  **Paradigma Zanzibar (DSL v1.1):**
+  No guardas "Rol = Doctor".
+  Guardas tuplas de relacion:
+  
+  type clinical_record
+    relations
+      define patient: [patient]
+      define can_read:  owner or can_write
+      define can_write: [doctor]
+  
+  Tuple:
+  {user: "doctor:X",
+   relation: "can_write",
+   object: "clinical_record:hc-001"}
+  
+  Check: can doctor:X can_write
+  on clinical_record:hc-001? YES
+  
+  Escala a millones de relaciones.
+end note
+
+note bottom of OpenFGA
+  **Cambio ADR-004:**
+  OpenFGA v1.x reemplaza Ory Keto.
+  Misma semantica Zanzibar.
+  DSL mas expresivo para
+  relaciones medicas complejas.
+  Open Source: Apache 2.0.
+  SDK Go: github.com/openfga/go-sdk
+end note
+
+note bottom of DB_Domain
+  **Outbox Pattern - Garantia:**
+  1. INSERT clinical_event
+  2. INSERT outbox_event
+  Ambos en MISMA TX PostgreSQL.
+
+  Si NATS falla: el outbox
+  reintenta hasta publicar.
+  Garantia: at-least-once.
+
+  Consumidores: idempotentes
+  (deduplicar por event_id UUIDv7).
+end note
+
+' ==========================================================
+' ORDEN DE IMPLEMENTACION — IAM Bounded Context
+' Ref: plans/05_orden_implementacion_capas_exhaustivo.md
+'      plans/05b_orden_implementacion_capas_detalle.md
+' ==========================================================
+note as IAMOrderNote
+  **ORDEN DE IMPLEMENTACION — IAM**
+
+  FASE 1 — Subcapa 1.E: Ory Kratos v1.3.1
+    Prereq: CloudNativePG (1.C) - kratos_db lista
+    Artefactos: HelmRelease ory/kratos, kratos.yml,
+    identity schemas (patient.json, doctor.json)
+    Criterio: GET /health/ready -> {"status":"ok"}
+              Passkey flow funciona desde browser
+
+  FASE 1 — Subcapa 1.F: IAM Domain Service Go
+    Prereq: 1.C (iam_db), 1.D (Protobuf), 1.E (Kratos)
+    Artefactos: services/iam/ completo, JWT Ed25519,
+    Outbox worker, Deployment + Service k8s,
+    Traefik ForwardAuth Middleware configurado
+    Criterio: POST /api/iam/token/exchange emite JWT
+              GET /internal/validate-token -> 200
+
+  FASE 3 — Subcapa 3.A: OpenFGA v1.x
+    Prereq: 1.C (openfga_db), 1.F (IAM Domain Service)
+    Artefactos: HelmRelease openfga/openfga,
+    authorization model DSL v1.1, IAM Service integrado
+    Criterio: Check API responde en <5ms P99
+              Modelo medico validado en play.fga.dev
+
+  NOTA: Traefik ForwardAuth Middleware (1.B) se
+  configura junto con IAM Domain Service (1.F).
+  Equivalente funcional de Caddy forward_auth.
+end note
+
+@enduml

@@ -1,0 +1,220 @@
+@startuml
+!theme plain
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam padding 5
+skinparam defaultTextAlignment center
+
+title Arquitectura "Build It Right The First Time" v3.1\nClinica Global de Salud Mental - Stack Definitivo (Abril 2026)
+
+' --- PALETA DE COLORES ---
+!define COLOR_FASE_1  #FF5722
+!define COLOR_FASE_2  #2196F3
+!define COLOR_FASE_3  #9C27B0
+!define COLOR_INFRA   #ECEFF1
+!define COLOR_DB      #CFD8DC
+!define COLOR_FRONT   #F5F5F5
+!define COLOR_NATS    #27AE60
+!define COLOR_OPS     #607D8B
+
+' --- ESTILOS ---
+skinparam component {
+  BackgroundColor<<Fase_1>>  COLOR_FASE_1
+  FontColor<<Fase_1>>        white
+  BackgroundColor<<Fase_2>>  COLOR_FASE_2
+  FontColor<<Fase_2>>        white
+  BackgroundColor<<Fase_3>>  COLOR_FASE_3
+  FontColor<<Fase_3>>        white
+  BackgroundColor<<Front>>   COLOR_FRONT
+  BorderColor<<Front>>       #BDBDBD
+  BackgroundColor<<Gateway>> COLOR_INFRA
+  BorderColor<<Gateway>>     #90A4AE
+  BackgroundColor<<Broker>>  COLOR_NATS
+  FontColor<<Broker>>        white
+  BackgroundColor<<Ops>>     COLOR_OPS
+  FontColor<<Ops>>           white
+}
+
+skinparam database {
+  BackgroundColor<<Storage>> COLOR_DB
+  BorderColor<<Storage>>     #78909C
+}
+
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor     #1565C0
+}
+
+' ==========================================================
+' CAPA CLOUDFLARE
+' ==========================================================
+package "Cloudflare Edge - Tier Gratuito" {
+
+  component "[CF Pages] Qwik v2.0 SPA\n--\nPortal Medico y Paciente.\nResumability: TTI ~50ms.\n@qwik.dev/qwik | TS 6.0" <<Front>> as Front
+
+  component "[CF Pages] Astro v6.x\n--\nLanding Page y Marketing.\nLighthouse 99.2. Zero JS.\nTS 6.0 | SEO Optimo." <<Front>> as Astro
+
+  component "[CF Workers] BFF / Hono v4.x\n--\nJWT Verify EdDSA.\nRouting y Edge Cache.\n100K req/dia gratuito." <<Gateway>> as BFF
+
+}
+
+' ==========================================================
+' VPS HETZNER
+' ==========================================================
+package "Hetzner CX32 - Talos Linux v1.10.x | Kubernetes 1.33.x | ~$7.50/mes" {
+
+  component "[Traefik v3.x] Ingress Controller\n--\nTLS via cert-manager + Let\'s Encrypt.\nForwardAuth Middleware → IAM Service.\nIngressRoute CRDs por namespace." <<Gateway>> as Traefik
+
+  package "Dominio Medico y Negocio" {
+
+    component "[1] IAM and Identity Service\n--\nOry Kratos v1.3.1 AuthN.\nOpenFGA v1.x AuthZ Zanzibar.\nGo 1.25.x + Chi v5 + pgxpool v5." <<Fase_1>> as IAM
+
+    component "[2] Scheduling Service\n--\nGo 1.25.x + Chi v5 + pgxpool v5.\nFHIR R4 Appointment output.\nEXCLUDE USING GIST en PG17." <<Fase_2>> as Scheduling
+
+    component "[2] Clinical Record Service\n--\nGo 1.25.x + Chi v5 + pgxpool v5.\nopenEHR Canonical JSON.\nEvent Store puro + RLS." <<Fase_2>> as Clinical
+
+    component "[3] Billing and Ops Service\n--\nGo 1.25.x + Chi v5 + pgxpool v5.\nMulti-pasarela de pago.\nIzipay Stripe Conekta." <<Fase_3>> as Billing
+
+  }
+
+  package "Columna Vertebral de Eventos" {
+    component "NATS JetStream v2.11.x\n--\nMessage Broker Apache 2.0.\nnats.go v1.50.0.\nEventos en Protobuf proto3." <<Broker>> as NATS
+  }
+
+  package "Persistencia y Event Stores - PostgreSQL 17 (17.4)" {
+
+    database "DB_Identity\n--\nKratos DB y OpenFGA DB.\nDomain profiles.\nOutbox events.\nRLS Policies." <<Storage>> as DB_IAM
+
+    database "DB_Scheduling\n--\nAppointments TSTZRANGE.\nEXCLUDE GIST constraints.\nOutbox Protobuf.\nFHIR resources JSONB." <<Storage>> as DB_Sched
+
+    database "DB_Clinical\n--\nEvent Store PURO.\nPayload: BYTEA Protobuf.\nopenEHR Canonical JSON.\nPK: UUIDv7. Inmutable." <<Storage>> as DB_Clin
+
+    database "DB_Billing\n--\nTransacciones Financieras.\nAppend-only inmutable.\nCurrency ISO 4217.\nTax country codes." <<Storage>> as DB_Bill
+
+  }
+
+  package "Observabilidad - PLG Stack" {
+    component "Prometheus v3.x\nLoki v3.x + Promtail\nTempo v2.9+\nGrafana v11.x\n--\nAlertas via Alertmanager v0.27+\na Telegram bot (gratuito)." <<Ops>> as Obs
+  }
+
+}
+
+cloud "Backblaze B2\nWAL continuo + daily backup\n~0.05 usd/mes" as B2
+
+' --- FLUJOS PRINCIPALES ---
+
+Front   --> BFF   : "HTTPS / WebSocket"
+Astro   --> BFF   : "HTTPS"
+BFF     --> Traefik : "HTTPS api.serenamente.com\n:443 TLS 1.3"
+
+Traefik --> IAM        : "ForwardAuth → /internal/validate-token"
+Traefik --> Scheduling : "/api/scheduling"
+Traefik --> Clinical   : "/api/clinical"
+Traefik --> Billing    : "/api/billing"
+
+IAM        -down-> DB_IAM   : "pgx/v5 pgxpool"
+Scheduling -down-> DB_Sched : "pgx/v5 pgxpool"
+Clinical   -down-> DB_Clin  : "pgx/v5 pgxpool"
+Billing    -down-> DB_Bill  : "pgx/v5 pgxpool"
+
+DB_IAM   .up.> NATS : "Outbox [UserRegistered]\n[DoctorOnboarded]"
+DB_Sched .up.> NATS : "Outbox [AppointmentBooked]\n[AppointmentCancelled]"
+DB_Clin  .up.> NATS : "Outbox [DiagnosisRecorded]\n[ConsultationFinished]"
+
+NATS ..> Clinical   : "Consume [AppointmentBooked]"
+NATS ..> Billing    : "Consume [ConsultationFinished]"
+NATS ..> Scheduling : "Consume [DoctorOffboarded]"
+
+DB_IAM  .right.> B2 : "backup"
+DB_Clin .right.> B2 : "backup"
+DB_Bill .right.> B2 : "backup"
+
+Obs ..> IAM        : "Scrape /metrics"
+Obs ..> Scheduling : "Scrape /metrics"
+Obs ..> Clinical   : "Scrape /metrics"
+Obs ..> Billing    : "Scrape /metrics"
+Obs ..> NATS       : "Scrape :8222"
+
+' --- NOTAS ---
+note right of NATS
+  **Protobuf proto3 + buf.build CLI**
+  Schema evolution nativa.
+  Sin Schema Registry adicional.
+  .proto files en Git = contrato.
+  nats.go v1.50.0 (Go client)
+  
+  BREAKING: v2.11 tiene cambios
+  respecto a v2.10.x.
+  Ver upgrade guide oficial.
+end note
+
+note right of IAM
+  **OpenFGA v1.x — Zanzibar**
+  Reemplaza Ory Keto.
+  Mejor DX para relaciones medicas.
+  Playground: play.fga.dev
+  Backing: Okta/Auth0.
+  
+  **Kratos v1.3.1 — Passkeys**
+  WebAuthn, MFA, cero contrasenas.
+end note
+
+note bottom of DB_Clin
+  **Event Store Puro (Inmutable)**
+  NUNCA UPDATE ni DELETE.
+  openEHR Canonical JSON en BYTEA.
+  PK = UUIDv7 (PG17 nativo).
+  Estado = replay desde eventos.
+end note
+
+note top of Front
+  **TypeScript 6.0 (released March 2026)**
+  Breaking changes vs TS 5.x.
+  Ultima version JS-based antes de TS 7.0.
+
+  **Qwik v2.0 — @qwik.dev/qwik**
+  Breaking change vs v1.x.
+  Nuevo paquete scope @qwik.dev
+
+  **Astro v6.x**
+  Requerido para soporte Qwik v2.
+end note
+
+' ==========================================================
+' ORDEN DE IMPLEMENTACION
+' Ref: plans/05_orden_implementacion_capas_exhaustivo.md
+'      plans/05b_orden_implementacion_capas_detalle.md
+' ==========================================================
+note as OrderNote
+  **ORDEN FINAL DE IMPLEMENTACION**
+
+  FASE 1 — Kubernetes + IAM + Gateway (~$7.50/mes)
+    1.A Hetzner CX32 + Talos Linux v1.10.x + k8s 1.33.x
+        FluxCD v2.x bootstrap (GitOps)
+    1.B cert-manager v1.x + Traefik v3.x + Sealed Secrets
+    1.C CloudNativePG v1.x + PostgreSQL 17.4 (6 databases)
+    1.D Protobuf schemas + buf.build
+    1.E Ory Kratos v1.3.1 (AuthN, Helm: ory/kratos)
+    1.F IAM Domain Service Go (JWT Ed25519 + Outbox)
+        Traefik ForwardAuth configurado
+    1.G BFF: CF Workers + Hono v4.x  [*]
+    1.H Qwik v2.0 SPA en CF Pages    [*]
+    1.I CloudNativePG ScheduledBackup → B2
+
+  FASE 2 — Motor Medico (~$16/mes)
+    2.A NATS JetStream v2.11.x (Helm: nats/nats)
+    2.B Outbox Worker (libreria Go)
+    2.C Scheduling Service Go k8s     [**]
+    2.D Clinical Record Service Go k8s [**]
+    2.E Landing Page Astro v6.x      [*]
+
+  FASE 3 — Plataforma Completa (~$22-27/mes)
+    3.A OpenFGA v1.x (Helm: openfga/openfga)
+    3.B Billing & Ops Service Go k8s  [***]
+    3.C kube-prometheus-stack v82.x + Loki + Tempo
+    3.D Alertmanager v0.27+ -> Telegram
+
+  [*] = CF Edge  [**] = Fase 2  [***] = Fase 3
+end note
+
+@enduml

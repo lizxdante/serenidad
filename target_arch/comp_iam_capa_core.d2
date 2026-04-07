@@ -1,0 +1,310 @@
+# =============================================================
+# comp_iam_capa_core.d2 — Arquitectura Granular: IAM Component v3.1
+# Identity and Access Management — Versiones Actualizadas (Abril 2026)
+# =============================================================
+# Render: d2 --layout=elk --theme=0 comp_iam_capa_core.d2 comp_iam_capa_core.svg
+# Install: https://d2lang.com/tour/install
+# =============================================================
+
+direction: right
+
+# =============================================================
+# ACTORES EXTERNOS AL IAM
+# =============================================================
+external: |md
+  **Traefik v3.x ForwardAuth**
+  y CF Workers Hono v4.x BFF
+| {
+  style.fill: "#F5F5F5"
+  style.stroke: "#BDBDBD"
+}
+
+nats: |md
+  **NATS JetStream v2.11.x**
+  nats.go v1.50.0
+  Event Bus Global
+| {
+  style.fill: "#27AE60"
+  style.font-color: white
+}
+
+core_services: |md
+  **Scheduling, Clinical**
+  **y demás Servicios**
+  Go 1.25.x
+| {
+  style.fill: "#F5F5F5"
+  style.stroke: "#BDBDBD"
+}
+
+# =============================================================
+# IAM BOUNDED CONTEXT
+# =============================================================
+iam_ctx: "IAM Bounded Context — Microservicio Aislado" {
+  style.fill: "#F3F4FF"
+  style.stroke: "#455A64"
+  style.stroke-dash: 5
+  style.stroke-width: 2
+
+  direction: down
+
+  go_iam: |md
+    **IAM Domain Service**
+    Go 1.25.x + Chi v5.x + pgx v5
+    Orquestador de Identidad.
+    Enriquece JWTs con UUIDv7.
+    Gestiona DIDs (did:web).
+    Publica eventos via Outbox.
+    golang-migrate v4.x
+  | {
+    style.fill: "#00ADD8"
+    style.font-color: white
+  }
+
+  # --- Ory Stack ---
+  ory_stack: "Ory Stack — Autenticación" {
+    style.fill: "#EDE7F6"
+    style.stroke: "#5528FF"
+
+    kratos: |md
+      **Ory Kratos v1.3.1**
+      AuthN
+      Passkeys WebAuthn.
+      Gestión de Sesiones y MFA.
+      Cero contraseñas por defecto.
+      Flows self-service.
+      SAML + OIDC disponibles.
+    | {
+      style.fill: "#5528FF"
+      style.font-color: white
+    }
+  }
+
+  # --- OpenFGA ---
+  openfga_zone: "OpenFGA v1.x — Autorización Zanzibar" {
+    style.fill: "#FFF3E0"
+    style.stroke: "#FF6B35"
+
+    openfga: |md
+      **OpenFGA v1.x**
+      AuthZ
+      Motor Zanzibar (Google).
+      Relation Tuples tipadas.
+      DSL de modelado expresivo.
+      Backing: Okta/Auth0.
+      Playground: play.fga.dev
+      Apache 2.0 \| $0 self-hosted
+    | {
+      style.fill: "#FF6B35"
+      style.font-color: white
+    }
+  }
+
+  # --- Bases de Datos (grid 1x3) ---
+  db_cluster: "IAM Database Cluster — PostgreSQL 17.4" {
+    style.fill: transparent
+    style.stroke: "#78909C"
+    style.stroke-dash: 5
+    grid-columns: 3
+
+    db_kratos: DB_Kratos {
+      shape: cylinder
+      label: |md
+        **Kratos DB**
+        PostgreSQL 17.4
+        Credenciales y hashes.
+        Sesiones activas.
+        Identity schemas.
+        Esquema interno Ory Kratos.
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+
+    db_openfga: DB_OpenFGA {
+      shape: cylinder
+      label: |md
+        **OpenFGA DB**
+        PostgreSQL 17.4
+        Relation Tuples.
+        Grafos de permisos.
+        Store ID por organización.
+        Consistencia configurable.
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+
+    db_domain: DB_Domain {
+      shape: cylinder
+      label: |md
+        **IAM Domain DB**
+        PostgreSQL 17.4
+        Outbox Table para NATS.
+        Perfiles de usuarios.
+        UUIDv7 como PK (PG17 nativo).
+        RLS Policies activas.
+      |
+      style.fill: "#CFD8DC"
+      style.stroke: "#78909C"
+    }
+  }
+}
+
+# =============================================================
+# FLUJOS DE COMUNICACIÓN
+# =============================================================
+
+# 1. Flujo de Login (Passkey/WebAuthn)
+external -> iam_ctx.ory_stack.kratos: "1. Challenge Passkey / WebAuthn\n(FIDO2 / WebAuthn Level 3)"
+iam_ctx.ory_stack.kratos -> iam_ctx.db_cluster.db_kratos: "Verifica Credencial FIDO2\npgx v5 pgxpool"
+iam_ctx.ory_stack.kratos -> external: "Set-Cookie / Session Token\n(CSRF protegido)"
+
+# 2. Flujo de Acceso Autenticado
+external -> iam_ctx.go_iam: "2. Petición autenticada\nSession Token en header"
+iam_ctx.go_iam -> iam_ctx.ory_stack.kratos: "Verifica Sesión activa\n(Kratos Admin API :4434)"
+iam_ctx.go_iam -> iam_ctx.openfga_zone.openfga: "Check: can doctor:X\nwrite on clinical_record:Y?"
+iam_ctx.openfga_zone.openfga -> iam_ctx.db_cluster.db_openfga: "Evalúa Grafo de Relaciones\npgx v5 pgxpool"
+
+# 3. Persistencia y Outbox
+iam_ctx.go_iam -> iam_ctx.db_cluster.db_domain: "TX atómica:\nInserta Perfil + Outbox Event\nEN MISMA TRANSACCIÓN PG"
+
+# 4. Emisión de Eventos
+iam_ctx.db_cluster.db_domain -> nats: "Outbox Worker · nats.go v1.50.0\nPublica: UserRegistered · DoctorOnboarded" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+nats -> core_services: "Distribuye eventos\na toda la clínica" {
+  style.stroke-dash: 5
+  style.stroke: "#27AE60"
+}
+
+# 5. Verificación JWT en otros servicios
+core_services -> iam_ctx.go_iam: "Valida JWT Ed25519\nvia clave pública\n(verificación asíncrona)" {
+  style.stroke-dash: 5
+  style.stroke: "#90A4AE"
+}
+
+# =============================================================
+# NOTAS
+# =============================================================
+
+note_jwt: |md
+  **El JWT Enriquecido (Ed25519):**
+  GoIAM toma la sesión de Kratos,
+  inyecta UUIDv7 + rol + tenant\_id
+  y firma con clave Ed25519.
+
+  golang-jwt/jwt v5.x para firma.
+  google/uuid v1.6+ para UUIDv7.
+
+  **Claims del JWT:**
+  - `sub`:       UUIDv7 del usuario
+  - `role`:      doctor\|patient\|admin
+  - `tenant_id`: UUIDv7 de la org
+  - `did`:       did:web:serenamente.com:...
+  - `iat / exp`: timestamps RFC 3339
+
+  Este JWT alimenta el RLS de todos
+  los PostgreSQL del sistema via
+  `SET LOCAL app.user_id = ...`
+| {
+  near: iam_ctx.go_iam
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_zanzibar: |md
+  **Paradigma Zanzibar (DSL v1.1):**
+  No guardas "Rol = Doctor".
+  Guardas tuplas de relación:
+
+  ```
+  type clinical_record
+    relations
+      define patient: [patient]
+      define can_read:  owner or can_write
+      define can_write: [doctor]
+
+  Tuple:
+  { user: "doctor:X",
+    relation: "can_write",
+    object: "clinical_record:hc-001" }
+  ```
+
+  Check: can doctor:X can\_write
+  on clinical\_record:hc-001? **YES**
+
+  Escala a millones de relaciones.
+| {
+  near: iam_ctx.openfga_zone.openfga
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_openfga_adr: |md
+  **Cambio ADR-004:**
+  OpenFGA v1.x reemplaza Ory Keto.
+  Misma semántica Zanzibar.
+  DSL más expresivo para
+  relaciones médicas complejas.
+  Open Source: Apache 2.0.
+  SDK Go: github.com/openfga/go-sdk
+| {
+  near: iam_ctx.db_cluster.db_openfga
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+note_outbox: |md
+  **Outbox Pattern — Garantía:**
+  1. INSERT clinical\_event
+  2. INSERT outbox\_event
+  Ambos en MISMA TX PostgreSQL.
+
+  Si NATS falla: el outbox
+  reintenta hasta publicar.
+  Garantía: at-least-once.
+
+  Consumidores: idempotentes
+  (deduplicar por event\_id UUIDv7).
+| {
+  near: iam_ctx.db_cluster.db_domain
+  shape: page
+  style.fill: "#FFFDE7"
+  style.stroke: "#F9A825"
+}
+
+order_note: |md
+  **ORDEN DE IMPLEMENTACIÓN — IAM Bounded Context**
+  Ref: plans/05_orden_implementacion_capas_exhaustivo.md
+
+  **FASE 1 — Subcapa 1.E: Ory Kratos v1.3.1**
+  Prereq: CloudNativePG (1.C) — kratos\_db lista
+  Artefactos: HelmRelease ory/kratos, kratos.yml,
+  identity schemas (patient.json, doctor.json)
+  Criterio: GET /health/ready → {"status":"ok"}
+            Passkey flow funciona desde browser
+
+  **FASE 1 — Subcapa 1.F: IAM Domain Service Go**
+  Prereq: 1.C (iam\_db), 1.D (Protobuf), 1.E (Kratos)
+  Artefactos: services/iam/ completo, JWT Ed25519,
+  Outbox worker, Deployment + Service k8s,
+  Traefik ForwardAuth Middleware configurado
+  Criterio: POST /api/iam/token/exchange emite JWT
+            GET /internal/validate-token → 200
+
+  **FASE 3 — Subcapa 3.A: OpenFGA v1.x**
+  Prereq: 1.C (openfga\_db), 1.F (IAM Domain Service)
+  Artefactos: HelmRelease openfga/openfga,
+  authorization model DSL v1.1, IAM Service integrado
+  Criterio: Check API responde en <5ms P99
+            Modelo médico validado en play.fga.dev
+| {
+  shape: page
+  style.fill: "#E8F5E9"
+  style.stroke: "#2E7D32"
+}

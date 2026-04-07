@@ -1,0 +1,319 @@
+@startuml
+!theme plain
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam padding 6
+skinparam defaultTextAlignment center
+
+title Diagrama de Infraestructura Operacional v4.0\nSerenamente - Talos Linux + Kubernetes 1.33.x en Hetzner CX32 (Abril 2026)
+
+' --- COLORES ---
+!define COLOR_K8S     #326CE5
+!define COLOR_TALOS   #FF5F00
+!define COLOR_CF      #F38020
+!define COLOR_BACKUP  #4CAF50
+!define COLOR_OBS     #607D8B
+!define COLOR_DATA    #1565C0
+!define COLOR_CORE    #6A1B9A
+!define COLOR_INFRA   #00695C
+
+skinparam rectangle {
+  BackgroundColor transparent
+  BorderColor     #455A64
+  BorderStyle     dashed
+  FontStyle       bold
+}
+
+skinparam component {
+  BackgroundColor<<K8s>>    #E8EAF6
+  BorderColor<<K8s>>        COLOR_K8S
+  BackgroundColor<<Talos>>  #FFF3E0
+  BorderColor<<Talos>>      COLOR_TALOS
+  BackgroundColor<<CF>>     #FFF3E0
+  BorderColor<<CF>>         COLOR_CF
+  BackgroundColor<<Backup>> #E8F5E9
+  BorderColor<<Backup>>     COLOR_BACKUP
+  BackgroundColor<<Obs>>    #ECEFF1
+  BorderColor<<Obs>>        COLOR_OBS
+  BackgroundColor<<Data>>   #E3F2FD
+  BorderColor<<Data>>       COLOR_DATA
+  BackgroundColor<<Core>>   #F3E5F5
+  BorderColor<<Core>>       COLOR_CORE
+  BackgroundColor<<Infra>>  #E0F2F1
+  BorderColor<<Infra>>      COLOR_INFRA
+}
+
+' ==========================================================
+' CLOUDFLARE EDGE (sin cambios)
+' ==========================================================
+rectangle "Cloudflare Edge - 0 usd/mes" {
+  component "Cloudflare Pages\nQwik v2.0 SPA + Astro v6.x\nTypeScript 6.0\n--\nBuild: git push (CI/CD)\nDeploy: automatico\n500 builds/mes gratis" <<CF>> as CFPages
+
+  component "Cloudflare Workers\nHono v4.x BFF\nTypeScript 6.0\n--\nJWT verify Ed25519\nEdge routing\n100K req/dia gratis" <<CF>> as CFWorkers
+}
+
+' ==========================================================
+' HETZNER CX32 — TALOS LINUX v1.10.x
+' ==========================================================
+rectangle "Hetzner CX32 - ~6.80 eur/mes\n4 vCPU AMD | 8 GB RAM | 80 GB SSD\nTalos Linux v1.10.x (OS inmutable - zero SSH)" {
+
+  ' --- TALOS CONTROL PLANE ---
+  component "Talos OS + Kubernetes 1.33.x\nControl Plane (allowSchedulingOnControlPlanes: true)\n--\netcd 3.5.20 | containerd 2.0.5\nHetzner CCM (Load Balancer + node lifecycle)\nSingle-node; add CX32 workers en Fase 4+" <<Talos>> as TalosCP
+
+  ' --- NAMESPACE: INGRESS ---
+  rectangle "Namespace: traefik" {
+    component "Traefik v3.x\nIngress Controller (DaemonSet)\nhostPort 80 / 443\n--\nForwardAuth Middleware → IAM\nIngressRoute CRDs\nTLS via cert-manager\nDashboard interno" <<Infra>> as Traefik
+  }
+
+  rectangle "Namespace: cert-manager" {
+    component "cert-manager v1.x\nCNCF Graduated\n--\nClusterIssuer Let's Encrypt\nAuto-renew certificados TLS\nCertificate CRDs" <<Infra>> as CertMgr
+  }
+
+  rectangle "Namespace: sealed-secrets" {
+    component "Sealed Secrets v0.27+\nBitnami / Helm\n--\nSealedSecret → Secret\nClave publica en Git (seguro)\nClave privada solo en cluster" <<Infra>> as SealedSec
+  }
+
+  ' --- NAMESPACE: CORE (Aplicacion) ---
+  rectangle "Namespace: serenamente-core" {
+
+    component "IAM Domain Service\nGo 1.25.x + Chi v5 + pgx v5\n--\nJWT Ed25519 enrichment\nOutbox Worker\n/internal/validate-token\ngolang-migrate (init container)" <<Core>> as IAMSvc
+
+    component "Scheduling Service\nGo 1.25.x + Chi v5\n--\nFHIR R4 Appointment\nEXCLUDE USING GIST\nOutbox Worker" <<Core>> as SchedSvc
+
+    component "Clinical Record Service\nGo 1.25.x + Chi v5\n--\nEvent Store append-only\nopenEHR Canonical JSON\nRLS enforced" <<Core>> as ClinSvc
+
+    component "Billing & Ops Service\nGo 1.25.x + Chi v5\n--\nMulti-gateway\nIzipay | Stripe | Conekta\nOutbox Worker" <<Core>> as BillSvc
+
+    component "Ory Kratos v1.3.1\nHelm: ory/kratos\n--\nAuthN: Passkeys WebAuthn\nSelf-service flows\nSAML + OIDC" <<Core>> as Kratos
+
+    component "OpenFGA v1.x\nHelm: openfga/openfga\n--\nAuthZ: Zanzibar engine\nDSL v1.1 models\nApache 2.0" <<Core>> as OpenFGA
+
+  }
+
+  ' --- NAMESPACE: DATA ---
+  rectangle "Namespace: serenamente-data" {
+
+    component "CloudNativePG v1.x\nOperador CNCF (cnpg-system)\nCluster CRD - PostgreSQL 17.4\n--\n6 databases aisladas:\niam_db | scheduling_db\nclinical_db | billing_db\nkratos_db | openfga_db\nWAL continuo → B2\nPITR disponible" <<Data>> as PG
+
+    component "NATS JetStream v2.11.x\nHelm: nats/nats\nnats.go v1.50.0\n--\nJetStream: storage=file (PVC)\n4 streams permanentes\nNACK CRDs para Streams/Consumers\nProto3 events" <<Data>> as NATS
+
+  }
+
+  ' --- NAMESPACE: OPS (Fase 3) ---
+  rectangle "Namespace: serenamente-ops (Fase 3)" {
+    component "kube-prometheus-stack v82.x\nPrometheus v3.x :9090\nGrafana v11.x :3000\nAlertmanager v0.27+ :9093\n--\nLoki v3.x + Promtail\nTempo v2.9+\nServiceMonitor auto-discovery\nAlertas → Telegram bot" <<Obs>> as ObsStack
+  }
+
+  ' --- FLUX CD ---
+  rectangle "Namespace: flux-system" {
+    component "FluxCD v2.x\nCNCF Graduated\nGitOps Controller\n--\nGitRepository → github.com/serenamente\nHelmRelease → reconcilia cada 1m\nKustomization por namespace\nZero drift garantizado" <<K8s>> as FluxCD
+  }
+
+}
+
+' ==========================================================
+' BACKUPS EXTERNOS — Backblaze B2
+' ==========================================================
+rectangle "Backups - Backblaze B2 - ~0.05 usd/mes" {
+  component "CloudNativePG barman-cloud\nWAL archiving continuo\nScheduledBackup CRD (02:00 UTC)\n--\nRetention: 30 dias base backup\nWAL: 90 dias (B2 lifecycle rule)\nPITR a cualquier punto\nRestore: kubectl cnpg restore" <<Backup>> as BackupSvc
+}
+
+' ==========================================================
+' GITHUB (CI/CD + GitOps Source)
+' ==========================================================
+rectangle "GitHub - serenamente/serenidad-platform" {
+  component "GitHub Actions CI\n--\ngo test + go build\ndocker build → ghcr.io\nUpdate image.tag en values.yaml\nSeal nuevos secrets\n\nghcr.io (Container Registry)\nOCI images firmadas" <<Infra>> as GH
+}
+
+' ==========================================================
+' RELACIONES
+' ==========================================================
+
+' Usuario → Cloudflare
+[Navegador\nPaciente o Medico] --> CFPages : "HTTPS app.serenamente.com\n(Qwik v2.0 resumable)"
+CFPages --> CFWorkers : "fetch() al BFF"
+
+' BFF → Hetzner
+CFWorkers --> Traefik : "HTTPS api.serenamente.com\n:443 TLS 1.3"
+
+' cert-manager → Traefik (TLS)
+CertMgr .right.> Traefik : "Certificate TLS\nLet's Encrypt auto"
+
+' Traefik ForwardAuth → IAM
+Traefik -down-> IAMSvc : "ForwardAuth Middleware\n→ /internal/validate-token\ncopy_headers X-User-ID\n         X-User-Role X-Tenant-ID"
+
+' Traefik → Servicios internos
+Traefik -down-> SchedSvc : "/api/scheduling/*"
+Traefik -down-> ClinSvc  : "/api/clinical/*"
+Traefik -down-> BillSvc  : "/api/billing/*"
+Traefik -down-> Kratos   : "/auth/* (public:4433)"
+
+' IAM internals
+IAMSvc -right-> Kratos  : "Kratos Admin API :4434\nSession verification"
+IAMSvc -right-> OpenFGA : "OpenFGA HTTP :8080\nCheck + WriteTuples"
+
+' Servicios → PostgreSQL (via CloudNativePG Service)
+IAMSvc   -down-> PG : "iam_db | kratos_db | openfga_db\npgx/v5 pgxpool\nSecret: cnpg-generated"
+SchedSvc -down-> PG : "scheduling_db\npgx/v5 pgxpool"
+ClinSvc  -down-> PG : "clinical_db\npgx/v5 pgxpool"
+BillSvc  -down-> PG : "billing_db\npgx/v5 pgxpool"
+
+' Servicios → NATS (Outbox Worker)
+IAMSvc   .up.> NATS : "Proto3 DoctorOnboarded"
+SchedSvc .up.> NATS : "Proto3 AppointmentBooked"
+ClinSvc  .up.> NATS : "Proto3 DiagnosisRecorded"
+BillSvc  .up.> NATS : "Proto3 PaymentCaptured"
+
+' NATS → Consumidores
+NATS ..> ClinSvc  : "JetStream durable\nAppointmentBooked"
+NATS ..> BillSvc  : "JetStream durable\nConsultationFinished"
+NATS ..> SchedSvc : "JetStream durable\nDoctorOffboarded"
+
+' Backups
+PG -right-> BackupSvc : "WAL continuo + daily backup\nbarman-cloud → B2"
+
+' Observabilidad
+ObsStack ..> IAMSvc   : "ServiceMonitor /metrics"
+ObsStack ..> SchedSvc : "ServiceMonitor /metrics"
+ObsStack ..> ClinSvc  : "ServiceMonitor /metrics"
+ObsStack ..> BillSvc  : "ServiceMonitor /metrics"
+ObsStack ..> NATS     : "PodMonitor :8222/metrics"
+ObsStack ..> PG       : "PodMonitor (cnpg exporter)"
+ObsStack ..> Traefik  : "ServiceMonitor /metrics"
+
+' GitOps
+GH .down.> FluxCD : "git push → FluxCD detecta\nnuevo commit en main"
+FluxCD .down.> Traefik  : "HelmRelease reconcile"
+FluxCD .down.> CertMgr  : "HelmRelease reconcile"
+FluxCD .down.> PG       : "Cluster CRD reconcile"
+FluxCD .down.> NATS     : "HelmRelease reconcile"
+FluxCD .down.> IAMSvc   : "HelmRelease reconcile"
+FluxCD .down.> SealedSec : "HelmRelease reconcile"
+
+' Talos gestiona k8s
+TalosCP -right-> FluxCD : "Kubernetes API\n(talosctl gestiona el OS)"
+
+' --- NOTAS ---
+note right of TalosCP
+  **Talos Linux v1.10.x — OS Inmutable:**
+  - 12 binarios en PATH (Ubuntu: miles)
+  - Zero SSH en produccion
+  - SquashFS firmado y versionado
+  - Todo via talosctl API + mTLS
+  - Upgrade atomico: OS + K8s juntos
+
+  **Single-node, add workers sin downtime:**
+  talosctl gen config worker
+  talosctl apply-config --nodes <NEW_IP>
+  → Cluster escala automaticamente
+end note
+
+note right of PG
+  **CloudNativePG v1.x:**
+  Cluster CRD gestiona:
+  - 6 databases en 1 instancia PG
+  - WAL archiving continuo → B2
+  - PITR a cualquier punto
+  - Auto-generated k8s Secrets
+    con connection strings para Go
+
+  Las extensiones PG siguen igual:
+  pg_uuidv7 | btree_gist | hstore
+
+  **Fase 4+:** separar clinical_db
+  en Cluster CRD propio para
+  compliance critico.
+end note
+
+note right of Traefik
+  **Traefik v3.x — Equivalencias vs Caddy:**
+
+  Caddy forward_auth
+  → Traefik ForwardAuth Middleware
+
+  Caddy reverse_proxy
+  → Traefik IngressRoute + Service
+
+  Caddy TLS automatico
+  → cert-manager ClusterIssuer
+
+  La logica IAM (/internal/validate-token)
+  NO cambia — solo el llamador cambia
+  (Caddy → Traefik ForwardAuth).
+end note
+
+note top of FluxCD
+  **GitOps con FluxCD v2.x:**
+  Git es la UNICA fuente de verdad.
+  Ningun kubectl apply manual en prod.
+
+  infra/clusters/hetzner-prod/
+  ├── flux-system/    (bootstrap)
+  ├── infrastructure/ (cert-mgr, traefik, cnpg)
+  ├── apps/           (iam, sched, clinical, billing)
+  └── secrets/        (SealedSecrets - safe for Git)
+
+  FluxCD reconcilia cada 1 minuto.
+  Drift de config: auto-revertido.
+end note
+
+note right of NATS
+  **NATS JetStream v2.11.x**
+  BREAKING vs v2.10.x.
+
+  4 Streams (NACK CRDs):
+  SERENAMENTE_IAM:      365d
+  SERENAMENTE_SCHED:    730d
+  SERENAMENTE_CLINICAL: sin limite
+  SERENAMENTE_BILLING:  3650d
+
+  storage=file → PVC (persiste en disco).
+  Consumer: explicit ACK.
+  MaxDeliver: 5 (retry + DLQ).
+end note
+
+' ==========================================================
+' ORDEN DE IMPLEMENTACION — Topologia Kubernetes
+' Ref: plans/06_talos_k8s_decision_y_cambios_en_cadena.md
+'      plans/05_orden_implementacion_capas_exhaustivo.md
+' ==========================================================
+note as InfraOrderNote
+  **ORDEN DE IMPLEMENTACION**
+
+  FASE 1 — Talos + k8s + IAM + Gateway (~$7.50/mes)
+    1.A  Hetzner CX32 + Talos Linux v1.10.x bootstrap
+         Kubernetes 1.33.x single-node
+         Hetzner CCM + FluxCD bootstrap
+    1.B  cert-manager + Traefik v3.x (ingress + TLS)
+         Sealed Secrets controller
+    1.C  CloudNativePG operator + Cluster CRD
+         (6 databases, WAL → B2, PITR)
+    1.D  Protobuf schemas + buf.build CLI
+    1.E  Ory Kratos v1.3.1 (Helm: ory/kratos)
+    1.F  IAM Domain Service (Deployment + Service)
+         JWT Ed25519 + Outbox Worker Go
+         Traefik ForwardAuth configurado
+    1.G  Cloudflare Workers + Hono v4.x BFF
+    1.H  Qwik v2.0 SPA en CF Pages
+    1.I  CloudNativePG ScheduledBackup CRD → B2
+
+  FASE 2 — Motor Medico (~$16/mes)
+    2.A  NATS JetStream (Helm: nats/nats, NACK CRDs)
+    2.B  Outbox Worker (libreria Go compartida)
+    2.C  Scheduling Service (Deployment + Service)
+    2.D  Clinical Record Service (Deployment + Service)
+    2.E  Astro v6.x Landing Page en CF Pages
+
+  FASE 3 — Plataforma Completa (~$22-27/mes)
+    3.A  OpenFGA v1.x (Helm: openfga/openfga)
+    3.B  Billing & Ops Service (Deployment + Service)
+    3.C  kube-prometheus-stack v82.x (Helm)
+         + Loki v3.x + Tempo v2.9+
+    3.D  Alertmanager → Telegram bot
+
+  FASE 4+ — Multi-nodo
+    talosctl apply-config --nodes <NEW_CX32>
+    → Worker se une sin downtime
+end note
+
+@enduml
