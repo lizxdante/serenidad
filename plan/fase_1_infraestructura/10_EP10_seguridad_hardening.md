@@ -5,7 +5,7 @@
 **Origen:** Sección §24 (V-19) del documento de decisión.
 **Prioridad:** Alta — Segunda línea de defensa.
 **Sprint:** S3–S4
-**Dependencias Entrantes:** EP-02 (cluster K8s con flannel que soporta NetworkPolicies), EP-07 (IAM Service desplegado — para validar reglas de comunicación).
+**Dependencias Entrantes:** EP-02 (cluster K8s con flannel que soporta NetworkPolicies), EP-03 HU-03.1 (FluxCD para Kustomization de manifiestos), EP-05 (CloudNativePG desplegado — labels `cnpg.io/cluster` en pods de PG), EP-07 (IAM Service desplegado — para validar reglas de comunicación).
 **Dependencias Salientes:** EP-11 (Observabilidad depende de red funcional).
 
 ---
@@ -162,15 +162,16 @@ T-10.1.1 (deny-all) — se aplica primero, rompe conectividad
   ├──► T-10.1.5 (allow DNS egress) — restaura resolución DNS
   └──► T-10.1.6 (allow egress externo) — restaura acceso a servicios externos
 
-IMPORTANTE: T-10.1.1 DEBE aplicarse junto con T-10.1.2 a T-10.1.6 en el mismo commit
-para evitar downtime. Alternativa: aplicar las allow-rules primero, y deny-all al final.
+IMPORTANTE: T-10.1.1 (deny-all) DEBE aplicarse ATÓMICAMENTE junto con T-10.1.2 a
+T-10.1.6 (allow-rules) en un ÚNICO commit para que FluxCD las aplique como conjunto.
+Aplicar deny-all sin las excepciones causa downtime inmediato.
 
-T-10.1.7 (kustomization) — agrupa todo
-T-10.1.8 (script firewall) — independiente de las NetworkPolicies
-T-10.1.9 (verificación) — después de todo lo anterior
+ORDEN DE IMPLEMENTACIÓN OBLIGATORIO:
+  1. Escribir PRIMERO las reglas allow (T-10.1.2 a T-10.1.6)
+  2. Escribir las reglas deny-all (T-10.1.1)
+  3. Agrupar en kustomization (T-10.1.7)
+  4. Commitear TODO en un solo push — FluxCD aplica el conjunto completo
+  5. Verificar (T-10.1.9)
 
-Recomendación: Aplicar en orden:
-  1. Reglas allow (T-10.1.2 a T-10.1.6)
-  2. Reglas deny-all (T-10.1.1) — en el mismo commit
-  3. Verificar (T-10.1.9)
+T-10.1.8 (script firewall) — independiente de las NetworkPolicies, puede hacerse en paralelo
 ```

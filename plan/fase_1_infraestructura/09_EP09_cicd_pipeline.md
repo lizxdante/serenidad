@@ -10,13 +10,23 @@
 
 ---
 
-## HU-09.1 — GitLab CI/CD Pipelines (V-18)
+## HU-09.1A — Orquestador Raíz y Pipeline del IAM Service (V-18, Parte A)
 
 **Como** ingeniero de plataforma,
-**quiero** tener pipelines CI/CD en GitLab que automáticamente ejecuten tests, builds, y deploys para cada componente del sistema al hacer push a `main`,
-**para que** el ciclo de entrega sea completamente automatizado y cualquier cambio llegue a producción en minutos sin intervención manual.
+**quiero** tener un orquestador raíz de CI/CD en GitLab y un pipeline específico para el IAM Service que ejecute tests, build de imagen Distroless, push al Container Registry, y actualización GitOps del manifiesto,
+**para que** cada push a `main` que modifique `services/iam/` desencadene automáticamente el ciclo test → build → deploy sin intervención manual.
 
-**Dependencias:** EP-01 HU-01.4 (variables CI/CD: `HCLOUD_TOKEN`, `CF_API_TOKEN`, `CF_ACCOUNT_ID`, etc.).
+**Dependencias:** EP-01 HU-01.4 (variables CI/CD: `HCLOUD_TOKEN`, `CF_API_TOKEN`, `CF_ACCOUNT_ID`, etc.), EP-07 HU-07.2 (IAM Service code + Dockerfile).
+**Archivo detallado:** `09_EP09_cicd_pipeline/HU-09.1A_Root_y_IAM_Pipeline.md`
+
+## HU-09.1B — Pipelines del Edge: BFF y SPA Web (V-18, Parte B)
+
+**Como** ingeniero de plataforma,
+**quiero** tener pipelines CI/CD que desplieguen automáticamente el BFF a Cloudflare Workers y la SPA a Cloudflare Pages al hacer push a `main`,
+**para que** los componentes de edge se actualicen en producción sin intervención manual, con verificación de tipos TypeScript previa al deploy.
+
+**Dependencias:** EP-08 HU-08.1 (BFF code + wrangler.toml), EP-08 HU-08.2 (SPA code + build config), EP-01 HU-01.4 (variables CF_API_TOKEN, CF_ACCOUNT_ID).
+**Archivo detallado:** `09_EP09_cicd_pipeline/HU-09.1B_Edge_Pipelines_Docs.md`
 
 ### Tareas y Subtareas
 
@@ -158,48 +168,66 @@
     - `$CI_SERVER_HOST` → `gitlab.com`.
     - `$CI_PROJECT_PATH` → `serenidad/serenidad-platform`.
 
-### Criterios de Aceptación de la HU-09.1
+### Criterios de Aceptación de la HU-09.1A (Orquestador + IAM)
 
 | # | Criterio | Verificación |
 |---|----------|--------------|
-| CA-1 | Pipeline IAM: push a services/iam → test + build + deploy | Pipeline completo exitoso en GitLab |
-| CA-2 | Pipeline BFF: push a apps/bff → deploy a CF Workers | BFF actualizado en CF Workers |
-| CA-3 | Pipeline SPA: push a apps/web → deploy a CF Pages | SPA actualizada en CF Pages |
-| CA-4 | Activación selectiva | Solo se activan pipelines para paths con cambios |
-| CA-5 | Cobertura ≥ 60% enforced | Pipeline falla si cobertura < 60% |
-| CA-6 | Imagen con tags correctos | SHA corto + latest en GitLab Container Registry |
-| CA-7 | FluxCD detecta cambio de imagen | Deployment actualizado tras push de manifiesto |
-| CA-8 | 6 variables CI/CD masked | `glab variable list` → todas masked |
-| CA-9 | 3 archivos de pipeline | `.gitlab/ci/iam-service.yml`, `deploy-bff.yml`, `deploy-web.yml` |
+| CA-09.1A-1 | Orquestador raíz incluye 3 sub-pipelines | `.gitlab-ci.yml` con `include` de los 3 archivos |
+| CA-09.1A-2 | Pipeline IAM: push a services/iam → test + build + deploy | Pipeline completo exitoso en GitLab |
+| CA-09.1A-3 | Cobertura ≥ 60% enforced | Pipeline falla si cobertura < 60% |
+| CA-09.1A-4 | Imagen con tags correctos | SHA corto + latest en GitLab Container Registry |
+| CA-09.1A-5 | FluxCD detecta cambio de imagen | Deployment actualizado tras push de manifiesto |
+| CA-09.1A-6 | No hay bucle infinito de CI | El commit `[skip ci]` del bot no dispara nuevo pipeline |
 
-### Definition of Done — HU-09.1
+### Criterios de Aceptación de la HU-09.1B (Edge: BFF + SPA)
 
-- [ ] `.gitlab-ci.yml` orquestador creado en la raíz.
-- [ ] 3 pipelines específicos creados en `.gitlab/ci/`.
+| # | Criterio | Verificación |
+|---|----------|--------------|
+| CA-09.1B-1 | Pipeline BFF: push a apps/bff → deploy a CF Workers | BFF actualizado en CF Workers |
+| CA-09.1B-2 | Pipeline SPA: push a apps/web → deploy a CF Pages | SPA actualizada en CF Pages |
+| CA-09.1B-3 | Activación selectiva | Solo se activan pipelines para paths con cambios |
+| CA-09.1B-4 | Type check TypeScript previo al deploy del BFF | `bun run tsc --noEmit` pasa antes de `wrangler deploy` |
+| CA-09.1B-5 | Health check post-deploy integrado | Jobs verifican HTTP 200 tras despliegue |
+| CA-09.1B-6 | Variables CI/CD de Cloudflare masked | `CF_API_TOKEN`, `CF_ACCOUNT_ID` protegidas |
+
+### Definition of Done — HU-09.1A
+
+- [ ] `.gitlab-ci.yml` orquestador creado en la raíz con `include` de los 3 sub-pipelines.
+- [ ] `.gitlab/ci/iam-service.yml` con `test-iam` y `build-push-iam` completos.
 - [ ] Pipeline IAM Service: test → build → push registry → actualizar manifiesto → FluxCD deploy.
-- [ ] Pipeline BFF: type check → wrangler deploy.
-- [ ] Pipeline SPA: build → wrangler pages deploy.
-- [ ] Activación selectiva por paths verificada.
+- [ ] Activación selectiva por paths verificada para `services/iam/`.
 - [ ] Cobertura mínima de 60% enforced.
-- [ ] Pipelines de los 3 componentes ejecutados y verificados.
-- [ ] Variables CI/CD documentadas.
+- [ ] Variables CI/CD de GitLab documentadas.
+
+### Definition of Done — HU-09.1B
+
+- [ ] `.gitlab/ci/deploy-bff.yml` con verificación de tipos TypeScript previo al deploy.
+- [ ] `.gitlab/ci/deploy-web.yml` con build de Qwik v2 y validación de `dist/_worker.js`.
+- [ ] Pipeline BFF: type check → wrangler deploy → health check.
+- [ ] Pipeline SPA: build → wrangler pages deploy → content-type check.
+- [ ] Activación selectiva verificada: cambios en BFF no despliegan la SPA y viceversa.
+- [ ] Variables `CF_API_TOKEN` y `CF_ACCOUNT_ID` configuradas como secretos protegidos.
 
 ---
 
 ## Resumen de Dependencias Internas EP-09
 
 ```
-T-09.1.1 (orquestador .gitlab-ci.yml)
-  ├──► T-09.1.2 (pipeline IAM) ──► T-09.1.5 (verificar pipeline IAM)
-  ├──► T-09.1.3 (pipeline BFF) ──► T-09.1.6 (verificar pipeline BFF)
-  └──► T-09.1.4 (pipeline SPA) ──► T-09.1.7 (verificar pipeline SPA)
+HU-09.1A (Orquestador + IAM Pipeline):
+  T-09.1A.1 (orquestador .gitlab-ci.yml)
+    └──► T-09.1A.2 (pipeline IAM) ──► T-09.1A.5 (commit + activación)
+         └──► T-09.1A.6 (verificar despliegue E2E)
 
-T-09.1.5, T-09.1.6, T-09.1.7 ──► T-09.1.8 (verificar no-activación)
+HU-09.1B (Pipelines Edge):
+  T-09.1B.3 (pipeline BFF) ──► T-09.1B.5 (commit + activación)
+  T-09.1B.4 (pipeline SPA)     └──► T-09.1B.6 (verificar activación selectiva)
+
+T-09.1A.6, T-09.1B.6 ──► T-09.1.8 (verificar no-activación cruzada)
 
 Dependencias externas:
-  T-09.1.2 requiere: EP-07 HU-07.2 (IAM Service code + Dockerfile).
-  T-09.1.3 requiere: EP-08 HU-08.1 (BFF code + wrangler.toml).
-  T-09.1.4 requiere: EP-08 HU-08.2 (SPA code + build config).
-  T-09.1.5 requiere: EP-02 (cluster K8s) + EP-03 (FluxCD) para verify deploy.
+  HU-09.1A requiere: EP-07 HU-07.2 (IAM Service code + Dockerfile).
+  HU-09.1B requiere: EP-08 HU-08.1 (BFF code + wrangler.toml),
+                      EP-08 HU-08.2 (SPA code + build config).
+  HU-09.1A.6 requiere: EP-02 (cluster K8s) + EP-03 (FluxCD) para verify deploy.
   Todas las pipelines requieren: EP-01 HU-01.4 (variables CI/CD en GitLab).
 ```

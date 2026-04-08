@@ -94,7 +94,7 @@
   - **CA:** Limits: `memory: "512Mi"`, `cpu: "1000m"`.
 - **ST-05.1.4.5** — Configurar storage.
   - **CA:** `size: 20Gi`, `storageClass: local-path`.
-- **ST-05.1.4.6** — Configurar backup a Backblaze B2 (preliminar — secrets B2 se crean en V-17).
+- **ST-05.1.4.6** — Configurar backup a Backblaze B2 (placeholder — la referencia al secret `cnpg-b2-credentials` se activa en HU-05.2 T-05.2.1).
   - **CA:** `barmanObjectStore` configurado con:
     - `destinationPath: "s3://serenidad-pg-backups/wal"`.
     - `endpointURL: "https://s3.us-west-004.backblazeb2.com"` (ajustar por región).
@@ -102,6 +102,7 @@
     - WAL compression gzip, maxParallel 2.
     - Data compression gzip, jobs 2.
   - **CA:** `retentionPolicy: "30d"`.
+  - **NOTA DE SECUENCIACIÓN:** El secret `cnpg-b2-credentials` no existe aún en este punto. La línea en `kustomization.yaml` que lo referencia debe quedar COMENTADA hasta que HU-05.2 T-05.2.1 lo cree y lo habilite. Sin esto, FluxCD fallará al intentar reconciliar un secret inexistente.
 - **ST-05.1.4.7** — Monitoring deshabilitado (Fase 3).
   - **CA:** `enablePodMonitor: false`.
 

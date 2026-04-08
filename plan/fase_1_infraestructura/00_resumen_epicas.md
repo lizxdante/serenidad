@@ -19,11 +19,11 @@
 | EP-06 | Schemas de Eventos Protobuf | V-12 | 1 | Alta | S2 |
 | EP-07 | IAM — Autenticación y Autorización | V-13, V-14 | 2 | Crítica | S3 |
 | EP-08 | Frontend y BFF | V-15, V-16 | 2 | Crítica | S3 |
-| EP-09 | CI/CD Pipeline | V-18 | 1 | Alta | S3 |
+| EP-09 | CI/CD Pipeline | V-18 | 2 (HU-09.1A, HU-09.1B) | Alta | S3 |
 | EP-10 | Seguridad y Hardening | V-19 | 1 | Alta | S3–S4 |
 | EP-11 | Observabilidad y Operaciones Día-2 | §25, §26, §27 | 3 | Media | S4 |
 
-**Total: 11 Épicas · 26 Historias de Usuario · ~120 Tareas · ~300 Subtareas**
+**Total: 11 Épicas · 27 Historias de Usuario · ~120 Tareas · ~300 Subtareas**
 
 ---
 
@@ -40,8 +40,8 @@ EP-01 Preparación y Cuentas
               └──► EP-06 Schemas Protobuf
                     └──► EP-07 IAM (parcial: eventos Protobuf en Outbox)
                           └──► EP-08 Frontend y BFF
-                                └──► EP-09 CI/CD Pipeline
-        └──► EP-10 Seguridad y Hardening (paralelo desde EP-02 en adelante)
+                                └──► EP-09 CI/CD Pipeline (HU-09.1A + HU-09.1B)
+        └──► EP-10 Seguridad y Hardening (depende de EP-02, EP-03, EP-05, EP-07)
               └──► EP-11 Observabilidad y Operaciones
 ```
 
@@ -116,6 +116,6 @@ La Fase 1 está **completa** cuando se cumple el flujo end-to-end:
 | `06_EP06_schemas_eventos.md` | Épica 6: Protobuf + buf.build |
 | `07_EP07_iam_autenticacion.md` | Épica 7: Ory Kratos, IAM Domain Service Go |
 | `08_EP08_frontend_bff.md` | Épica 8: BFF Hono CF Workers, Qwik SPA CF Pages |
-| `09_EP09_cicd_pipeline.md` | Épica 9: GitLab CI/CD pipelines |
+| `09_EP09_cicd_pipeline.md` | Épica 9: GitLab CI/CD pipelines (HU-09.1A: Orquestador + IAM, HU-09.1B: Edge BFF/SPA) |
 | `10_EP10_seguridad_hardening.md` | Épica 10: NetworkPolicies, firewall hardening |
 | `11_EP11_observabilidad_operaciones.md` | Épica 11: Health checks, monitoreo, troubleshooting, día-2 |
