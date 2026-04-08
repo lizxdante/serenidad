@@ -1,9 +1,9 @@
 # Orden de Implementación Exhaustivo por Capas y Subcapas
-## Serenamente — Clínica Digital de Salud Mental Global
+## Serenidad — Clínica Digital de Salud Mental Global
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital de Salud Mental |
+| **Proyecto** | Serenidad — Clínica Digital de Salud Mental |
 | **Versión del documento** | 1.0 |
 | **Basado en** | target_arch v3.1 — Stack Definitivo (Abril 2026) |
 | **Autor** | djca / Roo Architect Mode |
@@ -195,9 +195,9 @@ Kubernetes desde Fase 1 elimina la deuda técnica de orquestación que existirí
 2. Asignar una Floating IP al servidor (DNS estable ante reemplazos del VPS).
 
 3. Crear DNS records en Cloudflare:
-   - `api.serenamente.com` → A record → IP del VPS (Cloudflare Proxy: OFF — cert-manager ACME requiere acceso directo)
-   - `serenamente.com` → CNAME → Cloudflare Pages (Proxy: ON)
-   - `app.serenamente.com` → CNAME → Cloudflare Pages (Proxy: ON)
+   - `api.sereni.dad` → A record → IP del VPS (Cloudflare Proxy: OFF — cert-manager ACME requiere acceso directo)
+   - `sereni.dad` → CNAME → Cloudflare Pages (Proxy: ON)
+   - `app.sereni.dad` → CNAME → Cloudflare Pages (Proxy: ON)
 
 #### 3.1.2 — Bootstrap de Talos Linux (reemplaza "hardening de Ubuntu")
 
@@ -218,7 +218,7 @@ Kubernetes desde Fase 1 elimina la deuda técnica de orquestación que existirí
    # infra/clusters/hetzner-prod/talos/patches/single-node.yaml
    machine:
      network:
-       hostname: serenamente-prod-01
+       hostname: serenidad-prod-01
      kubelet:
        extraArgs:
          node-labels: "node-role.kubernetes.io/worker="
@@ -237,7 +237,7 @@ Kubernetes desde Fase 1 elimina la deuda técnica de orquestación que existirí
    talosctl gen secrets --output-file infra/clusters/hetzner-prod/talos/secrets.yaml
 
    # Generar configuración del controlplane
-   talosctl gen config serenamente-prod https://<VPS_IP>:6443      --with-secrets infra/clusters/hetzner-prod/talos/secrets.yaml      --config-patch @infra/clusters/hetzner-prod/talos/patches/single-node.yaml      --output-dir infra/clusters/hetzner-prod/talos/
+   talosctl gen config serenidad-prod https://<VPS_IP>:6443      --with-secrets infra/clusters/hetzner-prod/talos/secrets.yaml      --config-patch @infra/clusters/hetzner-prod/talos/patches/single-node.yaml      --output-dir infra/clusters/hetzner-prod/talos/
 
    # Genera: controlplane.yaml, worker.yaml, talosconfig
    ```
@@ -257,7 +257,7 @@ Kubernetes desde Fase 1 elimina la deuda técnica de orquestación que existirí
 
    # Verificar cluster
    kubectl --kubeconfig infra/clusters/hetzner-prod/kubeconfig get nodes
-   # → serenamente-prod-01   Ready   control-plane   ~2m
+   # → serenidad-prod-01   Ready   control-plane   ~2m
    ```
 
 #### 3.1.3 — Bootstrap de FluxCD (GitOps Controller)
@@ -269,7 +269,7 @@ Una vez el cluster está operativo, instalar FluxCD para que toda la infraestruc
 flux check --pre
 
 # Bootstrap FluxCD apuntando al repositorio
-flux bootstrap github   --owner=serenamente   --repository=serenidad-platform   --branch=main   --path=./infra/clusters/hetzner-prod   --personal   --kubeconfig infra/clusters/hetzner-prod/kubeconfig
+flux bootstrap github   --owner=serenidad   --repository=serenidad-platform   --branch=main   --path=./infra/clusters/hetzner-prod   --personal   --kubeconfig infra/clusters/hetzner-prod/kubeconfig
 
 # FluxCD crea: flux-system namespace + controllers + GitRepository
 # A partir de aqui, todo cambio de infra se hace via Git
@@ -283,7 +283,7 @@ flux bootstrap github   --owner=serenamente   --repository=serenidad-platform   
 - Namespace `flux-system` con FluxCD controllers corriendo
 
 **Criterio de aceptación:**
-- `kubectl get nodes` muestra `serenamente-prod-01 Ready`
+- `kubectl get nodes` muestra `serenidad-prod-01 Ready`
 - `kubectl get pods -n flux-system` muestra todos los pods de FluxCD en estado `Running`
 - `flux get all` muestra el `GitRepository` y `Kustomization` sincronizados
 - `talosctl health` sin errores
@@ -294,7 +294,7 @@ flux bootstrap github   --owner=serenamente   --repository=serenidad-platform   
 
 > **ADR-012:** cert-manager v1.x + Traefik v3.x reemplaza Caddy v2.9+ para el entorno Kubernetes. Ver [`plans/06_talos_k8s_decision_y_cambios_en_cadena.md`](./06_talos_k8s_decision_y_cambios_en_cadena.md).
 
-**Prerequisito:** 3.1 completo (cluster Kubernetes operativo, FluxCD bootstrap). DNS `api.serenamente.com` apuntando al VPS (Cloudflare Proxy: OFF — cert-manager ACME requiere acceso HTTP directo al CX32 por el puerto 80).
+**Prerequisito:** 3.1 completo (cluster Kubernetes operativo, FluxCD bootstrap). DNS `api.sereni.dad` apuntando al VPS (Cloudflare Proxy: OFF — cert-manager ACME requiere acceso HTTP directo al CX32 por el puerto 80).
 
 **Por qué antes de PostgreSQL:** Traefik es la puerta de entrada a todos los servicios. cert-manager necesita tiempo para emitir el certificado Let's Encrypt via ACME HTTP-01 challenge (propagación DNS + validación). Además, el ForwardAuth Middleware de Traefik se configura aquí y se activa cuando el IAM Service esté listo en 3.6.
 
@@ -336,7 +336,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: ops@serenamente.com
+    email: ops@sereni.dad
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
@@ -398,10 +398,10 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: iam-forward-auth
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   forwardAuth:
-    address: "http://iam-service.serenamente-core.svc.cluster.local:8080/internal/validate-token"
+    address: "http://iam-service.serenidad-core.svc.cluster.local:8080/internal/validate-token"
     authResponseHeaders:
       - "X-User-ID"
       - "X-User-Role"
@@ -409,7 +409,7 @@ spec:
     trustForwardHeader: false
 ```
 
-#### 3.2.4 — IngressRoute: api.serenamente.com (versión final)
+#### 3.2.4 — IngressRoute: api.sereni.dad (versión final)
 
 Crear `infra/apps/gateway/ingressroute.yaml`:
 
@@ -417,39 +417,39 @@ Crear `infra/apps/gateway/ingressroute.yaml`:
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
-  name: api-serenamente
-  namespace: serenamente-core
+  name: api-serenidad
+  namespace: serenidad-core
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/auth`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/auth`)"
       kind: Rule
       services:
         - name: ory-kratos-public
           port: 4433
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/api/iam`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/api/iam`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
       services:
         - name: iam-service
           port: 8080
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/api/scheduling`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/api/scheduling`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
       services:
         - name: scheduling-service
           port: 8081
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/api/clinical`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/api/clinical`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
       services:
         - name: clinical-service
           port: 8082
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/api/billing`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/api/billing`)"
       kind: Rule
       middlewares:
         - name: iam-forward-auth
@@ -458,15 +458,15 @@ spec:
           port: 8083
   tls:
     certResolver: letsencrypt-prod
-    secretName: api-serenamente-tls
+    secretName: api-serenidad-tls
 ```
 
 #### 3.2.5 — Verificación del TLS automático
 
 ```bash
 # Verificar que cert-manager emitió el certificado
-kubectl get certificate -n serenamente-core
-kubectl describe certificate api-serenamente-tls -n serenamente-core
+kubectl get certificate -n serenidad-core
+kubectl describe certificate api-serenidad-tls -n serenidad-core
 
 # Verificar Traefik está operativo
 kubectl get pods -n traefik
@@ -476,12 +476,12 @@ kubectl logs -n traefik -l app.kubernetes.io/name=traefik --tail=20
 kubectl get clusterissuer letsencrypt-prod
 
 # Test de TLS (el servicio de destino puede devolver 503 aún — lo que importa es que TLS funciona)
-curl -v https://api.serenamente.com/auth/health/ready
+curl -v https://api.sereni.dad/auth/health/ready
 ```
 
 **Artefactos resultantes:** `infra/infrastructure/cert-manager/` (HelmRelease + ClusterIssuer), `infra/infrastructure/traefik/` (HelmRelease), `infra/apps/iam-service/forwardauth-middleware.yaml`, `infra/apps/gateway/ingressroute.yaml`.
 
-**Criterio de aceptación:** `kubectl get certificate -n serenamente-core` muestra `READY=True`. `curl -I https://api.serenamente.com` retorna respuesta TLS válida (certificado emitido por Let's Encrypt R11). Traefik DaemonSet está Running.
+**Criterio de aceptación:** `kubectl get certificate -n serenidad-core` muestra `READY=True`. `curl -I https://api.sereni.dad` retorna respuesta TLS válida (certificado emitido por Let's Encrypt R11). Traefik DaemonSet está Running.
 
 ---
 
@@ -526,8 +526,8 @@ Crear `infra/infrastructure/cnpg/cluster.yaml`:
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: serenamente-pg
-  namespace: serenamente-data
+  name: serenidad-pg
+  namespace: serenidad-data
 spec:
   instances: 1
   imageName: ghcr.io/cloudnative-pg/postgresql:17.4
@@ -555,7 +555,7 @@ spec:
   backup:
     retentionPolicy: "30d"
     barmanObjectStore:
-      destinationPath: "s3://serenamente-pg-backups/wal"
+      destinationPath: "s3://serenidad-pg-backups/wal"
       endpointURL: "https://s3.us-west-004.backblazeb2.com"
       s3Credentials:
         accessKeyId:
@@ -569,8 +569,8 @@ spec:
     enablePodMonitor: true
 
   # CloudNativePG auto-genera Secrets con connection strings
-  # serenamente-pg-app → connection string para los servicios
-  # serenamente-pg-superuser → solo para administración
+  # serenidad-pg-app → connection string para los servicios
+  # serenidad-pg-superuser → solo para administración
 ```
 
 #### 3.3.3 — Inicialización de databases y extensiones
@@ -582,7 +582,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: pg-init-databases
-  namespace: serenamente-data
+  namespace: serenidad-data
   annotations:
     "helm.sh/hook": post-install
 spec:
@@ -596,10 +596,10 @@ spec:
         - name: PGPASSWORD
           valueFrom:
             secretKeyRef:
-              name: serenamente-pg-superuser
+              name: serenidad-pg-superuser
               key: password
         - name: PGHOST
-          value: "serenamente-pg-rw.serenamente-data.svc.cluster.local"
+          value: "serenidad-pg-rw.serenidad-data.svc.cluster.local"
         - name: PGUSER
           value: "postgres"
         command:
@@ -629,34 +629,34 @@ spec:
           echo "Databases inicializadas exitosamente."
 ```
 
-> **Nota sobre connection strings:** CloudNativePG genera automáticamente un Secret `serenamente-pg-app` con el campo `uri` que contiene el connection string completo. Los microservicios Go consumen este Secret via variable de entorno en su Deployment. Las migraciones de cada servicio se ejecutan como init containers usando `golang-migrate` antes de que el contenedor principal arranque.
+> **Nota sobre connection strings:** CloudNativePG genera automáticamente un Secret `serenidad-pg-app` con el campo `uri` que contiene el connection string completo. Los microservicios Go consumen este Secret via variable de entorno en su Deployment. Las migraciones de cada servicio se ejecutan como init containers usando `golang-migrate` antes de que el contenedor principal arranque.
 
 #### 3.3.4 — Verificación del Cluster CloudNativePG
 
 ```bash
 # Estado del cluster
-kubectl get cluster serenamente-pg -n serenamente-data
+kubectl get cluster serenidad-pg -n serenidad-data
 
 # Pods del cluster (primary + replicas en Fase 4+)
-kubectl get pods -n serenamente-data -l cnpg.io/cluster=serenamente-pg
+kubectl get pods -n serenidad-data -l cnpg.io/cluster=serenidad-pg
 
 # Conexión de prueba via kubectl
-kubectl exec -n serenamente-data \
-  $(kubectl get pod -n serenamente-data -l cnpg.io/cluster=serenamente-pg,role=primary -o name) \
+kubectl exec -n serenidad-data \
+  $(kubectl get pod -n serenidad-data -l cnpg.io/cluster=serenidad-pg,role=primary -o name) \
   -- psql -U postgres -c "\l"
 
 # Verificar extensiones en clinical_db
-kubectl exec -n serenamente-data \
-  $(kubectl get pod -n serenamente-data -l cnpg.io/cluster=serenamente-pg,role=primary -o name) \
+kubectl exec -n serenidad-data \
+  $(kubectl get pod -n serenidad-data -l cnpg.io/cluster=serenidad-pg,role=primary -o name) \
   -- psql -U postgres -d clinical_db -c "\dx"
 
 # Verificar Secret autogenerado con connection string
-kubectl get secret serenamente-pg-app -n serenamente-data -o jsonpath='{.data.uri}' | base64 -d
+kubectl get secret serenidad-pg-app -n serenidad-data -o jsonpath='{.data.uri}' | base64 -d
 ```
 
-**Artefactos resultantes:** `infra/infrastructure/cnpg/` (HelmRelease + Cluster CRD + init Job), 6 databases con extensiones instaladas, Secret `serenamente-pg-app` con connection string auto-generado por CloudNativePG.
+**Artefactos resultantes:** `infra/infrastructure/cnpg/` (HelmRelease + Cluster CRD + init Job), 6 databases con extensiones instaladas, Secret `serenidad-pg-app` con connection string auto-generado por CloudNativePG.
 
-**Criterio de aceptación:** `kubectl get cluster serenamente-pg -n serenamente-data` muestra `STATUS=Cluster in healthy state`. Las 6 databases existen. `pg_uuidv7` está instalado en `iam_db`. `btree_gist` está instalado en `scheduling_db`. El Secret `serenamente-pg-app` tiene un `uri` válido con formato `postgresql://app:PASSWORD@serenamente-pg-rw.serenamente-data.svc.cluster.local/postgres`.
+**Criterio de aceptación:** `kubectl get cluster serenidad-pg -n serenidad-data` muestra `STATUS=Cluster in healthy state`. Las 6 databases existen. `pg_uuidv7` está instalado en `iam_db`. `btree_gist` está instalado en `scheduling_db`. El Secret `serenidad-pg-app` tiene un `uri` válido con formato `postgresql://app:PASSWORD@serenidad-pg-rw.serenidad-data.svc.cluster.local/postgres`.
 
 ---
 
@@ -711,8 +711,8 @@ plugins:
 
 ```protobuf
 syntax = "proto3";
-package serenamente.iam.v1;
-option go_package = "serenamente/packages/events/gen/go/iam/v1;iamv1";
+package serenidad.iam.v1;
+option go_package = "serenidad/packages/events/gen/go/iam/v1;iamv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -724,7 +724,7 @@ message UserRegisteredEvent {
   string email      = 4;
   string role       = 5;  // "patient" | "doctor" | "admin"
   string tenant_id  = 6;  // UUIDv7 — organización/clínica
-  string did        = 7;  // did:web:serenamente.com:users:{user_id}
+  string did        = 7;  // did:web:sereni.dad:users:{user_id}
   google.protobuf.Timestamp registered_at = 8;
 }
 
@@ -751,8 +751,8 @@ message DoctorOffboardedEvent {
 
 ```protobuf
 syntax = "proto3";
-package serenamente.scheduling.v1;
-option go_package = "serenamente/packages/events/gen/go/scheduling/v1;schedulingv1";
+package serenidad.scheduling.v1;
+option go_package = "serenidad/packages/events/gen/go/scheduling/v1;schedulingv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -791,8 +791,8 @@ message AppointmentCancelledEvent {
 
 ```protobuf
 syntax = "proto3";
-package serenamente.clinical.v1;
-option go_package = "serenamente/packages/events/gen/go/clinical/v1;clinicalv1";
+package serenidad.clinical.v1;
+option go_package = "serenidad/packages/events/gen/go/clinical/v1;clinicalv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -833,8 +833,8 @@ message ConsultationFinishedEvent {
 
 ```protobuf
 syntax = "proto3";
-package serenamente.billing.v1;
-option go_package = "serenamente/packages/events/gen/go/billing/v1;billingv1";
+package serenidad.billing.v1;
+option go_package = "serenidad/packages/events/gen/go/billing/v1;billingv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -895,7 +895,7 @@ Los esquemas definen qué campos tiene cada tipo de usuario en Kratos.
 **`infra/kratos/schemas/patient.json`:**
 ```json
 {
-  "$id": "https://api.serenamente.com/schemas/identity/patient.json",
+  "$id": "https://api.sereni.dad/schemas/identity/patient.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Patient",
   "type": "object",

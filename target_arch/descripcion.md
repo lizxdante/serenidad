@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital de Salud Mental |
+| **Proyecto** | Serenidad — Clínica Digital de Salud Mental |
 | **Autor** | djca |
 | **Estado** | Definición Estratégica & Diseño de Alto Nivel — **VERSIÓN DEFINITIVA** |
 | **Última revisión** | Abril 2026 — Challenger v3.0 + Versiones Actualizadas |

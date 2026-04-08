@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital de Salud Mental |
+| **Proyecto** | Serenidad — Clínica Digital de Salud Mental |
 | **Versión** | 1.0 |
 | **Fecha** | Abril 2026 |
 | **Autor** | djca / Cascade AI + Tavily Research Pro |

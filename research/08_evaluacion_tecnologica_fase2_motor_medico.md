@@ -1,6 +1,6 @@
 # Evaluación Tecnológica Fase 2: Motor Médico — Stack Validado 2026
 
-> **Contexto:** Este documento evalúa y valida las tecnologías seleccionadas para la Fase 2 "Motor Médico" del proyecto Serenamente. La evaluación cubre NATS JetStream, Go microservices patterns, Outbox pattern transaccional, Event Sourcing para clinical records, y Astro v6 deployment en Cloudflare Pages. Para cada dimensión se proporciona **recomendaciones finales validadas** con investigación Tavily Pro (Abril 2026).
+> **Contexto:** Este documento evalúa y valida las tecnologías seleccionadas para la Fase 2 "Motor Médico" del proyecto Serenidad. La evaluación cubre NATS JetStream, Go microservices patterns, Outbox pattern transaccional, Event Sourcing para clinical records, y Astro v6 deployment en Cloudflare Pages. Para cada dimensión se proporciona **recomendaciones finales validadas** con investigación Tavily Pro (Abril 2026).
 
 ---
 
@@ -80,7 +80,7 @@ auth:
 
 Cálculo conservador (community validated):
 - **1,000 msg/s @ 1 KiB payload, 24h retention, R3**: ~265 GiB/stream
-- **Serenamente baseline (100 msg/s promedio)**: ~26.5 GiB/stream/día
+- **Serenidad baseline (100 msg/s promedio)**: ~26.5 GiB/stream/día
 
 **Recomendación inicial**: 100 GiB PVC por server (300 GiB total cluster) con `allowVolumeExpansion: true`.
 
@@ -100,7 +100,7 @@ Cálculo conservador (community validated):
 
 ### ✅ Veredicto: NATS JetStream v2.11.x — **MANTENER y VALIDADO**
 
-NATS JetStream es la elección correcta para Serenamente:
+NATS JetStream es la elección correcta para Serenidad:
 - **Open source puro** (Apache 2.0) → soberanía tecnológica ✓
 - **Performance**: ~1M msg/s en hardware modesto
 - **HIPAA-ready**: TLS, auth, audit trails, encryption at rest (disk level)
@@ -718,7 +718,7 @@ import heroImage from '../assets/hero.jpg';
 <body>
     <Image 
         src={heroImage} 
-        alt="Serenamente - Salud Mental" 
+        alt="Serenidad - Salud Mental" 
         loading="eager"
         format="avif"
         fallbackFormat="webp"
@@ -780,7 +780,7 @@ deploy_production:
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "MedicalOrganization",
-  "name": "Serenamente",
+  "name": "Serenidad",
   "url": "https://sereni.dad",
   "logo": "https://sereni.dad/logo.png",
   "contactPoint": {

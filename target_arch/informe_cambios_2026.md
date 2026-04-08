@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital |
+| **Proyecto** | Serenidad — Clínica Digital |
 | **Tipo** | Informe Técnico de Actualización |
 | **Fecha** | Abril 2026 |
 | **Autor** | djca + Investigación Tavily |

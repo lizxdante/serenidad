@@ -1,6 +1,6 @@
 # =============================================================
 # comp_infra_operaciones.d2 — Infraestructura Operacional v4.0
-# Serenamente — Talos Linux + Kubernetes 1.33.x en Hetzner CX32
+# Serenidad — Talos Linux + Kubernetes 1.33.x en Hetzner CX32
 # Abril 2026
 # =============================================================
 # Render: d2 --layout=elk --theme=0 comp_infra_operaciones.d2 comp_infra_operaciones.svg
@@ -61,7 +61,7 @@ cloudflare: "Cloudflare Edge — 0 USD/mes" {
 # =============================================================
 # GITHUB — CI/CD + GitOps Source
 # =============================================================
-github: "GitHub — serenamente/serenidad-platform" {
+github: "GitHub — serenidad/serenidad-platform" {
   style.fill: "#F5F5F5"
   style.stroke: "#333333"
 
@@ -112,7 +112,7 @@ hetzner: "Hetzner CX32 — ~6.80 EUR/mes | 4 vCPU AMD | 8 GB RAM | 80 GB SSD | T
     fluxcd: |md
       **FluxCD v2.x**
       CNCF Graduated · GitOps Controller
-      GitRepository → github.com/serenamente
+      GitRepository → github.com/serenidad
       HelmRelease → reconcilia cada 1m
       Kustomization por namespace
       Zero drift garantizado
@@ -178,8 +178,8 @@ hetzner: "Hetzner CX32 — ~6.80 EUR/mes | 4 vCPU AMD | 8 GB RAM | 80 GB SSD | T
     }
   }
 
-  # --- Namespace: serenamente-core ---
-  ns_core: "Namespace: serenamente-core" {
+  # --- Namespace: serenidad-core ---
+  ns_core: "Namespace: serenidad-core" {
     style.fill: "#F3E5F5"
     style.stroke: "#6A1B9A"
     style.stroke-dash: 4
@@ -253,8 +253,8 @@ hetzner: "Hetzner CX32 — ~6.80 EUR/mes | 4 vCPU AMD | 8 GB RAM | 80 GB SSD | T
     }
   }
 
-  # --- Namespace: serenamente-data ---
-  ns_data: "Namespace: serenamente-data" {
+  # --- Namespace: serenidad-data ---
+  ns_data: "Namespace: serenidad-data" {
     style.fill: "#E3F2FD"
     style.stroke: "#1565C0"
     style.stroke-dash: 4
@@ -291,8 +291,8 @@ hetzner: "Hetzner CX32 — ~6.80 EUR/mes | 4 vCPU AMD | 8 GB RAM | 80 GB SSD | T
     }
   }
 
-  # --- Namespace: serenamente-ops (Fase 3) ---
-  ns_ops: "Namespace: serenamente-ops — Fase 3" {
+  # --- Namespace: serenidad-ops (Fase 3) ---
+  ns_ops: "Namespace: serenidad-ops — Fase 3" {
     style.fill: "#ECEFF1"
     style.stroke: "#607D8B"
     style.stroke-dash: 4
@@ -339,10 +339,10 @@ backups: "Backups — Backblaze B2 — ~0.05 USD/mes" {
 # =============================================================
 
 # Usuario → Cloudflare
-browser -> cloudflare.cf_pages: "HTTPS app.serenamente.com\n(Qwik v2.0 resumable)"
+browser -> cloudflare.cf_pages: "HTTPS app.sereni.dad\n(Qwik v2.0 resumable)"
 
 # CF → Hetzner Ingress
-cloudflare.cf_workers -> hetzner.ns_traefik.traefik: "HTTPS api.serenamente.com :443 TLS 1.3"
+cloudflare.cf_workers -> hetzner.ns_traefik.traefik: "HTTPS api.sereni.dad :443 TLS 1.3"
 
 # cert-manager → Traefik
 hetzner.ns_cert.cert_mgr -> hetzner.ns_traefik.traefik: "Certificate TLS\nLet's Encrypt auto" {
@@ -559,10 +559,10 @@ note_nats: |md
   BREAKING vs v2.10.x.
 
   4 Streams (NACK CRDs):
-  - SERENAMENTE\_IAM:      365d
-  - SERENAMENTE\_SCHED:    730d
-  - SERENAMENTE\_CLINICAL: sin límite
-  - SERENAMENTE\_BILLING:  3650d
+  - SERENIDAD\_IAM:      365d
+  - SERENIDAD\_SCHED:    730d
+  - SERENIDAD\_CLINICAL: sin límite
+  - SERENIDAD\_BILLING:  3650d
 
   storage=file → PVC (persiste en disco).
   Consumer: explicit ACK.

@@ -105,7 +105,7 @@ cloud "Backblaze B2\nWAL continuo + daily backup\n~0.05 usd/mes" as B2
 
 Front   --> BFF   : "HTTPS / WebSocket"
 Astro   --> BFF   : "HTTPS"
-BFF     --> Traefik : "HTTPS api.serenamente.com\n:443 TLS 1.3"
+BFF     --> Traefik : "HTTPS api.sereni.dad\n:443 TLS 1.3"
 
 Traefik --> IAM        : "ForwardAuth → /internal/validate-token"
 Traefik --> Scheduling : "/api/scheduling"

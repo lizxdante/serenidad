@@ -1,6 +1,6 @@
 # Evaluación de Infraestructura: Plan Actual vs Alternativas Modernas
 
-> **Contexto:** Este documento evalúa la idoneidad del stack planificado en `07b_fase1_vps_hetzner_produccion.md` frente a alternativas actualizadas (2025). La evaluación cubre sistema operativo del nodo, distribución Kubernetes, herramienta GitOps, gestión de secretos, ingress controller, operador de PostgreSQL y proveedor de cómputo. Para cada dimensión se concluye con una **recomendación final** para el proyecto Serenamente.
+> **Contexto:** Este documento evalúa la idoneidad del stack planificado en `07b_fase1_vps_hetzner_produccion.md` frente a alternativas actualizadas (2025). La evaluación cubre sistema operativo del nodo, distribución Kubernetes, herramienta GitOps, gestión de secretos, ingress controller, operador de PostgreSQL y proveedor de cómputo. Para cada dimensión se concluye con una **recomendación final** para el proyecto Serenidad.
 
 ---
 
@@ -27,7 +27,7 @@ Talos Linux es un OS inmutable, diseñado exclusivamente para ejecutar Kubernete
 
 ### Análisis
 
-**Talos Linux es la elección más defensiva para Serenamente.** El proyecto maneja datos clínicos sensibles (PHI/PII), y la ausencia de SSH y el modelo de OS inmutable reducen significativamente la superficie de ataque comparado con un VPS convencional. El overhead adicional de complejidad day-0 se justifica por:
+**Talos Linux es la elección más defensiva para Serenidad.** El proyecto maneja datos clínicos sensibles (PHI/PII), y la ausencia de SSH y el modelo de OS inmutable reducen significativamente la superficie de ataque comparado con un VPS convencional. El overhead adicional de complejidad day-0 se justifica por:
 
 1. La producción directa desde el día 1 exige máxima seguridad desde el inicio.
 2. El CX32 (8 GB RAM) tiene holgura suficiente para el overhead de Talos.
@@ -123,7 +123,7 @@ Sealed Secrets cifra los Kubernetes Secrets con la clave pública del cluster (R
 
 **La alternativa más moderna y segura a largo plazo es SOPS + age** integrado con FluxCD nativo: no requiere controller extra en el cluster, la clave `age` puede guardarse en el password manager, y la rotación es explícita. Si el proyecto crece, SOPS + KMS (AWS KMS o Google Cloud KMS) añade auditoría centralizada sin dependencia de un controller en el cluster.
 
-**ESO tiene sentido cuando ya existe un vault externo** (HashiCorp Vault Enterprise, AWS Secrets Manager) en la organización. Para Serenamente en Fase 1 sin vault previo, añadiría complejidad sin beneficio proporcional.
+**ESO tiene sentido cuando ya existe un vault externo** (HashiCorp Vault Enterprise, AWS Secrets Manager) en la organización. Para Serenidad en Fase 1 sin vault previo, añadiría complejidad sin beneficio proporcional.
 
 **Riesgo crítico de Sealed Secrets a monitorear:** el backup de la clave privada del cluster es absolutamente obligatorio. Si el cluster se destruye y no hay backup de la clave, todos los `SealedSecret` son ilegibles y los secretos deben regenerarse. El plan actual ya contempla este backup en el password manager.
 

@@ -1,7 +1,7 @@
 # Informe Challenger v3: Stack Final Bajo Restricciones Reales
 ## PRO + Costo Mínimo + Open Source + Control Total + No Reinventar la Rueda
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental Global  
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental Global  
 **Versión:** 3.0 — Revisión final bajo todas las restricciones correctas  
 **Fecha:** Abril 2026  
 **Autor:** djca / Roo Architect Mode
@@ -117,8 +117,8 @@ Caddy (caddyserver.com):
   Función:   Reverse proxy con TLS automático vía Let's Encrypt
   Reemplaza: Nginx + Certbot + cron de renovación de certificados
 
-Caddyfile completo para Serenamente:
-  api.serenamente.com {
+Caddyfile completo para Serenidad:
+  api.sereni.dad {
     # Forward auth: IAM Service valida JWT en cada request
     forward_auth /api/scheduling/* iam-service:8080 {
       uri /internal/validate-token
@@ -174,7 +174,7 @@ Caddyfile completo para Serenamente:
   
 ¿Por qué no Redpanda Self-Hosted?
   → Redpanda es C++ thread-per-core: requiere más RAM y CPU que NATS
-  → Para el volumen de Serenamente (miles de eventos/día, no millones):
+  → Para el volumen de Serenidad (miles de eventos/día, no millones):
     NATS es MÁS que suficiente y mucho más eficiente en recursos
   → El ecosistema Kafka (Flink, Connect) no se necesita en las fases iniciales
   → Path de migración: cuando el volumen lo justifique, migrar de NATS a Redpanda
@@ -183,13 +183,13 @@ Caddyfile completo para Serenamente:
 ¿Por qué no Kafka/Apache?
   → JVM = 500MB-1GB de RAM solo para el broker
   → ZooKeeper o KRaft: complejidad operativa innecesaria
-  → Overkill para el volumen médico inicial de Serenamente
+  → Overkill para el volumen médico inicial de Serenidad
   
 NATS JetStream es la herramienta correcta:
   Licencia:    Apache 2.0
   Costo:       $0 (binario ~20MB)
   RAM idle:    ~50MB
-  Throughput:  10M+ msgs/sec (overkill para Serenamente)
+  Throughput:  10M+ msgs/sec (overkill para Serenidad)
   Latencia:    P99 <1ms
   JetStream:   Persistencia durable en disco
   Clustering:  Soportado (3 nodos para HA en Fase 3)
@@ -207,7 +207,7 @@ NATS JetStream es la herramienta correcta:
       - "--store_dir=/data"
       - "--http_port=8222"
       - "--max_payload=10MB"
-      - "--cluster_name=serenamente-prod"
+      - "--cluster_name=serenidad-prod"
       - "--tls"
       - "--tlscert=/certs/nats.crt"
       - "--tlskey=/certs/nats.key"
@@ -220,10 +220,10 @@ NATS JetStream es la herramienta correcta:
     # NO exponer puerto 4222 al exterior
 
 # Streams iniciales (ejecutar via nats CLI una vez):
-# nats stream add SERENAMENTE_IAM      --subjects "iam.>"        --retention limits --max-age 365d  --storage file
-# nats stream add SERENAMENTE_SCHED    --subjects "scheduling.>" --retention limits --max-age 730d  --storage file
-# nats stream add SERENAMENTE_CLINICAL --subjects "clinical.>"   --retention limits --max-age 0     --storage file  # infinito
-# nats stream add SERENAMENTE_BILLING  --subjects "billing.>"    --retention limits --max-age 3650d --storage file  # 10 años fiscal
+# nats stream add SERENIDAD_IAM      --subjects "iam.>"        --retention limits --max-age 365d  --storage file
+# nats stream add SERENIDAD_SCHED    --subjects "scheduling.>" --retention limits --max-age 730d  --storage file
+# nats stream add SERENIDAD_CLINICAL --subjects "clinical.>"   --retention limits --max-age 0     --storage file  # infinito
+# nats stream add SERENIDAD_BILLING  --subjects "billing.>"    --retention limits --max-age 3650d --storage file  # 10 años fiscal
 ```
 
 ---
@@ -345,7 +345,7 @@ Veredicto de costo:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: serenamente_admin
+      POSTGRES_USER: serenidad_admin
       POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -382,14 +382,14 @@ REVOKE ALL ON DATABASE billing_db FROM iam_user, scheduling_user, clinical_user;
 
 ```bash
 #!/bin/bash
-# /opt/serenamente/scripts/backup-postgres.sh
-# Cron: 0 2 * * * /opt/serenamente/scripts/backup-postgres.sh
+# /opt/serenidad/scripts/backup-postgres.sh
+# Cron: 0 2 * * * /opt/serenidad/scripts/backup-postgres.sh
 
 set -euo pipefail
 
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/var/backups/serenamente/postgres
-DOCKER_COMPOSE_DIR=/opt/serenamente
+BACKUP_DIR=/var/backups/serenidad/postgres
+DOCKER_COMPOSE_DIR=/opt/serenidad
 
 # Crear directorio de backup
 mkdir -p $BACKUP_DIR
@@ -406,7 +406,7 @@ done
 
 # Subir a Backblaze B2 (rclone — open source, Apache 2.0)
 # rclone es la alternativa open source a aws-cli para object storage
-rclone copy $BACKUP_DIR serenamente-b2:serenamente-backups/postgres/
+rclone copy $BACKUP_DIR serenidad-b2:serenidad-backups/postgres/
 
 # Retener solo los últimos 30 días localmente
 find $BACKUP_DIR -name "*.sql.gz" -mtime +30 -delete
@@ -500,7 +500,7 @@ Migración de Keto a OpenFGA: los conceptos son idénticos.
     # Puertos 8080 (HTTP) y 8081 (gRPC) solo internos
 
   iam-service:
-    image: serenamente/iam-service:latest
+    image: serenidad/iam-service:latest
     depends_on: [ory-kratos, openfga, postgres, nats]
     environment:
       KRATOS_PUBLIC_URL: http://ory-kratos:4433
@@ -513,7 +513,7 @@ Migración de Keto a OpenFGA: los conceptos son idénticos.
     restart: unless-stopped
 ```
 
-### 5.4 El Modelo de Autorización OpenFGA para Serenamente
+### 5.4 El Modelo de Autorización OpenFGA para Serenidad
 
 ```
 # Modelo completo de relaciones médicas en OpenFGA DSL
@@ -586,7 +586,7 @@ CAPA 2: Cloudflare Workers con Hono.js — BFF para el frontend
   → Kong es pesado (Java + PostgreSQL adicional para plugins)
   → Envoy es complejo (YAML extenso, curva alta incluso para PRO)
   → Caddy + Cloudflare Workers cubren el 95% de los casos de uso de un API Gateway
-    para el volumen de Serenamente
+    para el volumen de Serenidad
 ```
 
 ### 6.2 El BFF en Cloudflare Workers
@@ -604,7 +604,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.use('*', cors({ origin: ['https://app.serenamente.com'] }))
+app.use('*', cors({ origin: ['https://app.sereni.dad'] }))
 
 // Verificar JWT emitido por el IAM Service
 app.use('/api/*', (c, next) => {
@@ -630,7 +630,7 @@ export default app
 
 // wrangler.toml para deploy:
 // [vars]
-// VPS_API_URL = "https://api.serenamente.com"
+// VPS_API_URL = "https://api.sereni.dad"
 ```
 
 ---
@@ -654,7 +654,7 @@ Astro 5 (landing page + marketing):
 
 Cloudflare Pages:
   Tier gratuito:   Proyectos ilimitados, 500 builds/mes, bandwidth unlimited
-  Costo:           $0 para el volumen inicial de Serenamente
+  Costo:           $0 para el volumen inicial de Serenidad
   
   Si supera el tier gratuito: Cloudflare Pages Pro = $25/mes
   → Incluye 5,000 builds/mes, analytics avanzado
@@ -732,7 +732,7 @@ Opción A: Desplegar EHRbase (servidor openEHR open source, Java)
   → En el VPS de 4GB: 12-25% del RAM total solo para el servidor OpenEHR
   → Complejidad: AQL es un lenguaje adicional que aprender y mantener
   → Otro proceso en Docker Compose que monitorear y actualizar
-  → Para Serenamente Fase 1-3: la complejidad no vale el beneficio
+  → Para Serenidad Fase 1-3: la complejidad no vale el beneficio
 
 Opción B: OpenEHR como paradigma de modelado (sin servidor openEHR)
   → Los eventos clínicos se MODELAN con arquetipos openEHR:
@@ -854,7 +854,7 @@ Alertas enviadas a Telegram (bot gratuito):
 
 ```
 ══════════════════════════════════════════════════════════════════
-  SERENAMENTE — STACK TARGET v3.0 (Abril 2026)
+  SERENIDAD — STACK TARGET v3.0 (Abril 2026)
   Restricciones: PRO + Costo Mínimo + Open Source + No Reinventar
 ══════════════════════════════════════════════════════════════════
 

@@ -2,7 +2,7 @@
 
 ## Guía Exhaustiva de Implementación — Ruta Directa a Producción
 
-**Proyecto:** Serenamente — Clínica Digital de Salud Mental Global
+**Proyecto:** Serenidad — Clínica Digital de Salud Mental Global
 **Versión:** 1.0 — Abril 2026
 **Autor:** djca
 **Documento alternativo a:** [`plans/07_fase1_laptop_talos_desarrollo.md`](./07_fase1_laptop_talos_desarrollo.md) — variante laptop local
@@ -60,7 +60,7 @@ Cuando el desarrollo ocurre en hardware local y producción en un VPS, siempre e
 - `ClusterIssuer` usa CA auto-firmada en local y Let's Encrypt en producción — los certificados tienen comportamientos diferentes.
 - El `Hetzner CCM` no existe en laptop; en producción gestiona el ciclo de vida de nodos y load balancers.
 - Las latencias de red son radicalmente distintas: LAN vs internet.
-- Las variables de entorno de los Workers de Cloudflare apuntan a `localhost` en dev y a `api.serenamente.com` en producción.
+- Las variables de entorno de los Workers de Cloudflare apuntan a `localhost` en dev y a `api.sereni.dad` en producción.
 
 Cada una de estas diferencias es un vector de error que no se descubre hasta el momento de la migración. Con una inversión inicial de aproximadamente €6.80/mes (VPS CX32), este vector desaparece por completo. El código que funciona en el VPS es el código de producción.
 
@@ -103,7 +103,7 @@ Ciclo de integración (deploy al VPS):
   commit → git push → GitLab CI build+push → FluxCD detecta → deploy
 
 Ciclo de emergencia (patch rápido sin CI/CD):
-  docker build → docker push registry.gitlab.com → kubectl rollout restart deployment/iam-service -n serenamente-core
+  docker build → docker push registry.gitlab.com → kubectl rollout restart deployment/iam-service -n serenidad-core
 ```
 
 ---
@@ -123,12 +123,12 @@ INTERNET
 ║  │ CF Pages                 │  │ CF Workers                     │║
 ║  │ Qwik v2.0 SPA            │  │ Hono v4.x BFF                  │║
 ║  │ @qwik.dev/qwik TS 6.0    │  │ JWT verify Ed25519 TS 6.0      │║
-║  │ app.serenamente.com      │  │ 100K req/día gratis            │║
-║  │ TTI ~50ms (resumable)    │  │ fetch() → api.serenamente.com  │║
+║  │ app.sereni.dad      │  │ 100K req/día gratis            │║
+║  │ TTI ~50ms (resumable)    │  │ fetch() → api.sereni.dad  │║
 ║  └──────────────────────────┘  └────────────────────────────────┘║
 ╚══════════════════════════════════════════════════════════════════╝
     │
-    │ HTTPS api.serenamente.com :443 TLS 1.3
+    │ HTTPS api.sereni.dad :443 TLS 1.3
     │ (Cloudflare Proxy activo — DDoS protection gratis)
     │
     ▼
@@ -141,7 +141,7 @@ INTERNET
 ║ ┌─────────────────────────────────────────────────────────────┐  ║
 ║ │ ns: flux-system                                             │  ║
 ║ │   FluxCD v2.x — GitOps controller                          │  ║
-║ │   Sincroniza: gitlab.com/serenamente/serenidad-platform      │  ║
+║ │   Sincroniza: gitlab.com/serenidad/serenidad-platform      │  ║
 ║ │   Branch: main — Reconcilia cada 1 minuto                  │  ║
 ║ └─────────────────────────────────────────────────────────────┘  ║
 ║                                                                  ║
@@ -165,7 +165,7 @@ INTERNET
 ║ └─────────────────────────────────────────────────────────────┘  ║
 ║                                                                  ║
 ║ ┌─────────────────────────────────────────────────────────────┐  ║
-║ │ ns: serenamente-data                                        │  ║
+║ │ ns: serenidad-data                                        │  ║
 ║ │   CloudNativePG v1.x — Cluster CRD — PostgreSQL 17.4       │  ║
 ║ │   6 databases: iam_db, scheduling_db, clinical_db,         │  ║
 ║ │                billing_db, kratos_db, openfga_db           │  ║
@@ -173,7 +173,7 @@ INTERNET
 ║ └─────────────────────────────────────────────────────────────┘  ║
 ║                                                                  ║
 ║ ┌─────────────────────────────────────────────────────────────┐  ║
-║ │ ns: serenamente-core                                        │  ║
+║ │ ns: serenidad-core                                        │  ║
 ║ │   Ory Kratos v1.3.1 — AuthN Passkeys/WebAuthn              │  ║
 ║ │   IAM Domain Service Go — JWT Ed25519 + Outbox             │  ║
 ║ └─────────────────────────────────────────────────────────────┘  ║
@@ -193,14 +193,14 @@ INTERNET
 
 | URL | Servicio | Namespace | Ruta Traefik |
 |-----|----------|-----------|--------------|
-| `https://app.serenamente.com` | Qwik v2.0 SPA | CF Pages (externo) | — |
-| `https://api.serenamente.com/auth/*` | Ory Kratos (public :4433) | serenamente-core | /auth/* |
-| `https://api.serenamente.com/api/iam/*` | IAM Domain Service | serenamente-core | /api/iam/* |
-| `https://api.serenamente.com/api/scheduling/*` | Scheduling (Fase 2) | serenamente-core | /api/scheduling/* |
-| `https://api.serenamente.com/api/clinical/*` | Clinical Record (Fase 2) | serenamente-core | /api/clinical/* |
-| `https://api.serenamente.com/api/billing/*` | Billing (Fase 3) | serenamente-core | /api/billing/* |
+| `https://app.sereni.dad` | Qwik v2.0 SPA | CF Pages (externo) | — |
+| `https://api.sereni.dad/auth/*` | Ory Kratos (public :4433) | serenidad-core | /auth/* |
+| `https://api.sereni.dad/api/iam/*` | IAM Domain Service | serenidad-core | /api/iam/* |
+| `https://api.sereni.dad/api/scheduling/*` | Scheduling (Fase 2) | serenidad-core | /api/scheduling/* |
+| `https://api.sereni.dad/api/clinical/*` | Clinical Record (Fase 2) | serenidad-core | /api/clinical/* |
+| `https://api.sereni.dad/api/billing/*` | Billing (Fase 3) | serenidad-core | /api/billing/* |
 
-> **Nota sobre subdominios vs rutas:** Se usa un único dominio `api.serenamente.com` con rutas de path prefix en lugar de subdominios por microservicio. Esto simplifica la gestión de certificados (un solo certificado wildcard o SAN) y el routing en Traefik.
+> **Nota sobre subdominios vs rutas:** Se usa un único dominio `api.sereni.dad` con rutas de path prefix en lugar de subdominios por microservicio. Esto simplifica la gestión de certificados (un solo certificado wildcard o SAN) y el routing en Traefik.
 
 ---
 
@@ -235,7 +235,7 @@ INTERNET
 | Backblaze B2 | ~$0.01-0.05 | Almacenamiento WAL (~100-500 MB) + egress mínimo |
 | GitLab.com (monorepo + CI/CD) | $0 | Tier gratuito: 400 min CI/mes con runners compartidos (suficiente para Fase 1); runners auto-escalados |  
 | GitLab Container Registry | $0 | Incluido en GitLab.com gratuito; 10 GB storage por proyecto; `registry.gitlab.com` |
-| Dominio `serenamente.com` | ~$10-15/año | Cloudflare Registrar (precio de costo, sin markup) |
+| Dominio `sereni.dad` | ~$10-15/año | Cloudflare Registrar (precio de costo, sin markup) |
 | Let's Encrypt certificados | $0 | Open Source, siempre gratuito |
 | **TOTAL FASE 1** | **~€7-8/mes** | Más dominio ($1.20/mes amortizado) |
 
@@ -249,7 +249,7 @@ Antes de ejecutar cualquier tarea técnica, se necesitan las siguientes cuentas:
 
 **4.1.1 GitLab**
 - Cuenta personal o de grupo: `gitlab.com`
-- Crear el monorepo: `serenamente/serenidad-platform` (privado o público según preferencia)
+- Crear el monorepo: `serenidad/serenidad-platform` (privado o público según preferencia)
 - GitLab CI/CD viene habilitado por defecto; verificar en Settings → CI/CD → Runners que los runners compartidos están activos
 - Crear un Personal Access Token (PAT) con scopes: `api`, `read_repository`, `write_repository`, `read_registry`, `write_registry`
   - Avatar → Edit Profile → Access Tokens → Add new token
@@ -261,13 +261,13 @@ Antes de ejecutar cualquier tarea técnica, se necesitan las siguientes cuentas:
 
 **4.1.2 Hetzner Cloud**
 - Crear cuenta en `https://console.hetzner.cloud`
-- Crear un proyecto: `serenamente-production`
+- Crear un proyecto: `serenidad-production`
 - Generar API Token del proyecto: Project → Security → API Tokens → Generate API Token (Read & Write)
 - Guardar el token de API de Hetzner
 
 **4.1.3 Cloudflare**
 - Crear cuenta en `cloudflare.com`
-- Agregar el dominio `serenamente.com` (o el dominio elegido)
+- Agregar el dominio `sereni.dad` (o el dominio elegido)
   - Opción A: Transferir dominio a Cloudflare Registrar (recomendado — precio de costo)
   - Opción B: Cambiar nameservers del dominio actual a los de Cloudflare
 - Verificar que el dominio está en estado `Active` en Cloudflare
@@ -278,18 +278,18 @@ Antes de ejecutar cualquier tarea técnica, se necesitan las siguientes cuentas:
 
 **4.1.4 Backblaze B2**
 - Crear cuenta en `backblaze.com`
-- Crear un bucket: `serenamente-pg-backups`
+- Crear un bucket: `serenidad-pg-backups`
   - Tipo: Private
   - Región: elegir la más cercana geográficamente (Europe: eu-central)
 - Crear Application Key: Account → App Keys → Add a New Application Key
   - Name: `cnpg-barman-key`
-  - Bucket access: `serenamente-pg-backups` (solo este bucket)
+  - Bucket access: `serenidad-pg-backups` (solo este bucket)
   - Type of access: Read and Write
   - Guardar: `keyID` y `applicationKey`
 
 **4.1.5 Resend (SMTP para emails transaccionales — Tier gratuito)**
 - Crear cuenta en `resend.com`
-- Añadir y verificar el dominio `serenamente.com` en Resend
+- Añadir y verificar el dominio `sereni.dad` en Resend
 - Crear API Key: Resend Dashboard → API Keys → Create API Key
 - Tier gratuito: 3,000 emails/mes, 100/día — suficiente para Fase 1
 
@@ -391,9 +391,9 @@ tar -xzf hcloud-linux-amd64.tar.gz
 sudo mv hcloud /usr/local/bin/
 
 # Configurar (usar el API Token generado en 4.1.2):
-hcloud context create serenamente-production
+hcloud context create serenidad-production
 # → Enter API token: <pegar token>
-hcloud context use serenamente-production
+hcloud context use serenidad-production
 
 # Verificar:
 hcloud server list
@@ -488,12 +488,12 @@ Crear un archivo `.envrc` en la raíz del monorepo (NO commitear — añadir a `
 
 # Hetzner
 export HCLOUD_TOKEN="<token-api-hetzner>"
-export HETZNER_PROJECT="serenamente-production"
+export HETZNER_PROJECT="serenidad-production"
 export VPS_IP=""  # Se completa en Tarea V-01
 
 # GitLab
 export GITLAB_TOKEN="<token-gitlab-pat>"
-export GITLAB_USER="serenamente"
+export GITLAB_USER="serenidad"
 export GITLAB_REPO="serenidad-platform"
 export GITLAB_DEPLOY_TOKEN_USER="<deploy-token-username>"
 export GITLAB_DEPLOY_TOKEN="<deploy-token-value>"
@@ -502,12 +502,12 @@ export GITLAB_DEPLOY_TOKEN="<deploy-token-value>"
 export CF_API_TOKEN="<token-api-cloudflare>"
 export CF_ZONE_ID="<zone-id-cloudflare>"
 export CF_ACCOUNT_ID="<account-id-cloudflare>"
-export CF_DOMAIN="serenamente.com"
+export CF_DOMAIN="sereni.dad"
 
 # Backblaze B2
 export B2_KEY_ID="<keyID-backblaze>"
 export B2_APPLICATION_KEY="<applicationKey-backblaze>"
-export B2_BUCKET="serenamente-pg-backups"
+export B2_BUCKET="serenidad-pg-backups"
 export B2_ENDPOINT="s3.us-west-004.backblazeb2.com"  # Ajustar por región
 
 # Resend (SMTP)
@@ -589,21 +589,21 @@ Aunque Talos Linux no usa SSH en producción, el modo rescue de Hetzner sí lo u
 
 ```bash
 # Generar SSH key dedicada para Hetzner (si no tienes una):
-ssh-keygen -t ed25519 -C "hetzner-serenamente-$(date +%Y%m%d)" \
-  -f ~/.ssh/hetzner_serenamente_ed25519
+ssh-keygen -t ed25519 -C "hetzner-serenidad-$(date +%Y%m%d)" \
+  -f ~/.ssh/hetzner_serenidad_ed25519
 
 # Mostrar la clave pública para agregar a Hetzner:
-cat ~/.ssh/hetzner_serenamente_ed25519.pub
+cat ~/.ssh/hetzner_serenidad_ed25519.pub
 
 # Agregar al proyecto Hetzner via CLI:
 hcloud ssh-key create \
-  --name "serenamente-admin-key" \
-  --public-key-from-file ~/.ssh/hetzner_serenamente_ed25519.pub
+  --name "serenidad-admin-key" \
+  --public-key-from-file ~/.ssh/hetzner_serenidad_ed25519.pub
 
 # Verificar:
 hcloud ssh-key list
 # → ID    NAME                    FINGERPRINT
-# → 12345 serenamente-admin-key   xx:xx:xx:...
+# → 12345 serenidad-admin-key   xx:xx:xx:...
 ```
 
 ### 5.2 Configurar variables CI/CD de GitLab
@@ -654,15 +654,15 @@ hcloud datacenter list
 # IMPORTANTE: La imagen "ubuntu-24.04" es temporal — Talos reemplazará el OS.
 # El servidor se crea con Ubuntu para poder usar el modo rescate de Hetzner.
 hcloud server create \
-  --name serenamente-prod-01 \
+  --name serenidad-prod-01 \
   --type cx32 \
   --image ubuntu-24.04 \
   --datacenter nbg1-dc3 \
-  --ssh-key serenamente-admin-key \
+  --ssh-key serenidad-admin-key \
   --location nbg1
 
 # Guardar la IP asignada:
-VPS_IP=$(hcloud server describe serenamente-prod-01 -o json | jq -r '.public_net.ipv4.ip')
+VPS_IP=$(hcloud server describe serenidad-prod-01 -o json | jq -r '.public_net.ipv4.ip')
 echo "VPS_IP=${VPS_IP}" >> .envrc
 echo "IP del servidor: ${VPS_IP}"
 ```
@@ -676,22 +676,22 @@ Una Floating IP permanece aunque el servidor sea reconstruido. Esto es crítico:
 hcloud floating-ip create \
   --type ipv4 \
   --home-location nbg1 \
-  --name serenamente-prod-fip \
-  --description "IP flotante produccion Serenamente"
+  --name serenidad-prod-fip \
+  --description "IP flotante produccion Serenidad"
 
 # Obtener la Floating IP asignada:
-FLOATING_IP=$(hcloud floating-ip describe serenamente-prod-fip -o json | jq -r '.ip')
+FLOATING_IP=$(hcloud floating-ip describe serenidad-prod-fip -o json | jq -r '.ip')
 echo "Floating IP: ${FLOATING_IP}"
 echo "FLOATING_IP=${FLOATING_IP}" >> .envrc
 
 # Asignar la Floating IP al servidor:
-hcloud floating-ip assign serenamente-prod-fip serenamente-prod-01
+hcloud floating-ip assign serenidad-prod-fip serenidad-prod-01
 
 # Verificar asignación:
-hcloud floating-ip describe serenamente-prod-fip
+hcloud floating-ip describe serenidad-prod-fip
 ```
 
-> **Nota sobre Floating IP vs IP del servidor:** El servidor tiene su propia IP pública asignada automáticamente por Hetzner. La Floating IP es una IP adicional que puedes reasignar entre servidores. Para Serenamente se usará la Floating IP como la IP pública canónica (la que configurarás en DNS). La IP directa del servidor queda como acceso de emergencia.
+> **Nota sobre Floating IP vs IP del servidor:** El servidor tiene su propia IP pública asignada automáticamente por Hetzner. La Floating IP es una IP adicional que puedes reasignar entre servidores. Para Serenidad se usará la Floating IP como la IP pública canónica (la que configurarás en DNS). La IP directa del servidor queda como acceso de emergencia.
 
 ### 6.3 Configurar Firewall de Hetzner
 
@@ -699,11 +699,11 @@ El Firewall de Hetzner opera a nivel de infraestructura, antes de que el tráfic
 
 ```bash
 # Crear el firewall:
-hcloud firewall create --name serenamente-prod-fw
+hcloud firewall create --name serenidad-prod-fw
 
 # Reglas de entrada (ingress):
 # HTTP — necesario para ACME HTTP-01 challenge de Let's Encrypt
-hcloud firewall add-rule serenamente-prod-fw \
+hcloud firewall add-rule serenidad-prod-fw \
   --direction in \
   --protocol tcp \
   --port 80 \
@@ -712,7 +712,7 @@ hcloud firewall add-rule serenamente-prod-fw \
   --description "HTTP Let's Encrypt ACME"
 
 # HTTPS — tráfico principal de la aplicación
-hcloud firewall add-rule serenamente-prod-fw \
+hcloud firewall add-rule serenidad-prod-fw \
   --direction in \
   --protocol tcp \
   --port 443 \
@@ -722,7 +722,7 @@ hcloud firewall add-rule serenamente-prod-fw \
 
 # Talos API — RESTRINGIR a tu IP de trabajo solamente
 MY_IP=$(curl -s https://ifconfig.me)
-hcloud firewall add-rule serenamente-prod-fw \
+hcloud firewall add-rule serenidad-prod-fw \
   --direction in \
   --protocol tcp \
   --port 50000 \
@@ -730,7 +730,7 @@ hcloud firewall add-rule serenamente-prod-fw \
   --description "Talos API (solo IP de trabajo)"
 
 # Kubernetes API — RESTRINGIR a tu IP de trabajo solamente
-hcloud firewall add-rule serenamente-prod-fw \
+hcloud firewall add-rule serenidad-prod-fw \
   --direction in \
   --protocol tcp \
   --port 6443 \
@@ -738,12 +738,12 @@ hcloud firewall add-rule serenamente-prod-fw \
   --description "Kubernetes API (solo IP de trabajo)"
 
 # Aplicar firewall al servidor:
-hcloud firewall apply-to-resource serenamente-prod-fw \
+hcloud firewall apply-to-resource serenidad-prod-fw \
   --type server \
-  --server serenamente-prod-01
+  --server serenidad-prod-01
 
 # Verificar reglas:
-hcloud firewall describe serenamente-prod-fw
+hcloud firewall describe serenidad-prod-fw
 ```
 
 > **Advertencia de seguridad:** Los puertos 50000 (Talos API) y 6443 (Kubernetes API) solo deben ser accesibles desde tu IP de trabajo. Si tu IP cambia (IP dinámica de ISP), deberás actualizar estas reglas. Considera usar una VPN con IP fija para el acceso administrativo.
@@ -752,7 +752,7 @@ hcloud firewall describe serenamente-prod-fw
 
 ```bash
 # El servidor tiene Ubuntu temporalmente — verificar acceso antes de instalar Talos:
-ssh -i ~/.ssh/hetzner_serenamente_ed25519 root@${VPS_IP}
+ssh -i ~/.ssh/hetzner_serenidad_ed25519 root@${VPS_IP}
 # Debe responder con el prompt de Ubuntu
 
 # Dentro del servidor, verificar hardware:
@@ -781,19 +781,19 @@ echo "Versión Talos a instalar: ${TALOS_VERSION}"
 # → v1.10.x
 
 # Paso 2: Poner el servidor en modo rescate (Hetzner Rescue System):
-hcloud server enable-rescue serenamente-prod-01 \
+hcloud server enable-rescue serenidad-prod-01 \
   --type linux64 \
-  --ssh-key serenamente-admin-key
+  --ssh-key serenidad-admin-key
 # → Rescue activado. El servidor DEBE ser reiniciado para entrar en rescue.
 
 # Paso 3: Reiniciar el servidor para que entre en modo rescate:
-hcloud server reset serenamente-prod-01
+hcloud server reset serenidad-prod-01
 
 # Esperar ~30-60 segundos para que el rescue system arranque:
 sleep 60
 
 # Paso 4: Conectar al rescue system:
-ssh -i ~/.ssh/hetzner_serenamente_ed25519 root@${VPS_IP}
+ssh -i ~/.ssh/hetzner_serenidad_ed25519 root@${VPS_IP}
 # El prompt será del Hetzner Rescue Linux, no de Ubuntu
 ```
 
@@ -891,7 +891,7 @@ talosctl version --insecure --nodes ${VPS_IP}
 machine:
   # Configuración de red con Floating IP
   network:
-    hostname: serenamente-prod-01
+    hostname: serenidad-prod-01
     # Hetzner asigna la IP principal via DHCP — dejar DHCP para la IP principal
     # La Floating IP se configura como alias adicional
     interfaces:
@@ -996,7 +996,7 @@ echo "BACKUP CRÍTICO: infra/clusters/hetzner-prod/talos/secrets.yaml"
 echo "Si pierdes este archivo, no podrás regenerar las credenciales del cluster."
 
 # Generar configuración del cluster:
-talosctl gen config serenamente-production \
+talosctl gen config serenidad-production \
   "https://${FLOATING_IP}:6443" \
   --with-secrets infra/clusters/hetzner-prod/talos/secrets.yaml \
   --config-patch @infra/clusters/hetzner-prod/talos/patches/hetzner-cx32.yaml \
@@ -1071,7 +1071,7 @@ export KUBECONFIG="$(pwd)/infra/clusters/hetzner-prod/kubeconfig"
 kubectl get nodes -o wide
 # Output esperado:
 # NAME                    STATUS   ROLES           AGE   VERSION   INTERNAL-IP   EXTERNAL-IP
-# serenamente-prod-01     Ready    control-plane   5m    v1.33.x   <FLOATING_IP> <none>
+# serenidad-prod-01     Ready    control-plane   5m    v1.33.x   <FLOATING_IP> <none>
 
 # Verificar todos los pods del sistema:
 kubectl get pods -A
@@ -1113,7 +1113,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-secrets
+  name: serenidad-secrets
   labels:
     app.kubernetes.io/managed-by: flux
 ---
@@ -1127,7 +1127,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-data
+  name: serenidad-data
   labels:
     environment: production
     app.kubernetes.io/managed-by: flux
@@ -1135,7 +1135,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-core
+  name: serenidad-core
   labels:
     environment: production
     app.kubernetes.io/managed-by: flux
@@ -1143,7 +1143,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: serenamente-ops
+  name: serenidad-ops
   labels:
     environment: production
     app.kubernetes.io/managed-by: flux
@@ -1262,11 +1262,11 @@ kubectl get pods -n hcloud-system
 # → hcloud-cloud-controller-manager-xxx   Running
 
 # Verificar que el nodo ya no tiene el taint uninitialized:
-kubectl describe node serenamente-prod-01 | grep Taint
+kubectl describe node serenidad-prod-01 | grep Taint
 # → No taints after CCM initialization
 
 # Verificar que el nodo tiene las labels de Hetzner:
-kubectl get node serenamente-prod-01 -o yaml | grep -A5 "topology.kubernetes.io"
+kubectl get node serenidad-prod-01 -o yaml | grep -A5 "topology.kubernetes.io"
 # → topology.kubernetes.io/region: eu-central
 # → topology.kubernetes.io/zone: nbg1
 ```
@@ -1275,7 +1275,7 @@ kubectl get node serenamente-prod-01 -o yaml | grep -A5 "topology.kubernetes.io"
 
 ## 10. Tarea V-05 — FluxCD v2.x (GitOps desde el primer día)
 
-FluxCD es el núcleo del principio de operaciones de Serenamente: **Git es la única fuente de verdad**. Todo cambio a producción debe pasar por un commit en el repositorio. Esta tarea bootstrap FluxCD en el cluster y conecta el repositorio de GitLab.
+FluxCD es el núcleo del principio de operaciones de Serenidad: **Git es la única fuente de verdad**. Todo cambio a producción debe pasar por un commit en el repositorio. Esta tarea bootstrap FluxCD en el cluster y conecta el repositorio de GitLab.
 
 ### 10.1 Pre-checks antes del bootstrap
 
@@ -1491,7 +1491,7 @@ infra/
     ├── .sops.yaml                      ← Reglas SOPS: qué cifrar y con qué clave age
     ├── iam-service-secrets.yaml        ← Secret cifrado con SOPS+age (seguro en Git)
     ├── kratos-secrets.yaml             ← Secret cifrado con SOPS+age
-    ├── cnpg-serenamente-admin-creds.yaml ← Secret cifrado con SOPS+age
+    ├── cnpg-serenidad-admin-creds.yaml ← Secret cifrado con SOPS+age
     ├── cnpg-b2-credentials.yaml        ← Secret cifrado con SOPS+age
     └── gitlab-registry-secret.yaml     ← dockerconfigjson cifrado con SOPS+age
 ```
@@ -1566,7 +1566,7 @@ metadata:
 spec:
   acme:
     server: https://acme-staging-v02.api.letsencrypt.org/directory
-    email: admin@serenamente.com   # Ajustar con email real
+    email: admin@sereni.dad   # Ajustar con email real
     privateKeySecretRef:
       name: letsencrypt-staging-key
     solvers:
@@ -1582,7 +1582,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: admin@serenamente.com   # Ajustar con email real
+    email: admin@sereni.dad   # Ajustar con email real
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
@@ -1612,22 +1612,22 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: test-certificate
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   secretName: test-tls-secret
   issuerRef:
     name: letsencrypt-staging
     kind: ClusterIssuer
   dnsNames:
-    - api.serenamente.com
+    - api.sereni.dad
 EOF
 
 # Monitorear el estado (puede tardar 1-3 minutos):
-kubectl describe certificate test-certificate -n serenamente-core
+kubectl describe certificate test-certificate -n serenidad-core
 # Buscar: Status: True, Reason: Ready
 
 # Cuando esté Ready, eliminar el test y cambiar a producción:
-kubectl delete certificate test-certificate -n serenamente-core
+kubectl delete certificate test-certificate -n serenidad-core
 ```
 
 ---
@@ -1738,7 +1738,7 @@ spec:
       - "--certificatesresolvers.letsencrypt.acme.tlschallenge=false"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@serenamente.com"
+      - "--certificatesresolvers.letsencrypt.acme.email=admin@sereni.dad"
       - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
 
     # Persistencia para almacenar los certificados ACME
@@ -1772,7 +1772,7 @@ metadata:
   namespace: traefik
 spec:
   forwardAuth:
-    address: "http://iam-service.serenamente-core.svc.cluster.local:8080/internal/validate-token"
+    address: "http://iam-service.serenidad-core.svc.cluster.local:8080/internal/validate-token"
     trustForwardHeader: true
     authResponseHeaders:
       - "X-User-ID"
@@ -1855,7 +1855,7 @@ SOPS (Secrets OPerationS) cifra los valores de los Kubernetes Secrets directamen
 #!/bin/bash
 # scripts/encrypt-secret.sh
 # Uso: ./scripts/encrypt-secret.sh <namespace> <secret-name> <key>=<value> [<key>=<value> ...]
-# Ejemplo: ./scripts/encrypt-secret.sh serenamente-core iam-jwt-secret JWT_PRIVATE_KEY="$(cat key.pem)"
+# Ejemplo: ./scripts/encrypt-secret.sh serenidad-core iam-jwt-secret JWT_PRIVATE_KEY="$(cat key.pem)"
 #
 # Genera un Kubernetes Secret cifrado con SOPS+age listo para commitear en Git.
 # FluxCD lo descifrará automáticamente durante la reconciliación.
@@ -1907,7 +1907,7 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - cluster.yaml
-  - ../../../secrets/cnpg-serenamente-admin-creds.yaml  # Secret cifrado SOPS
+  - ../../../secrets/cnpg-serenidad-admin-creds.yaml  # Secret cifrado SOPS
   - ../../../secrets/cnpg-b2-credentials.yaml            # Secret cifrado SOPS
 ```
 
@@ -1931,14 +1931,14 @@ flux reconcile kustomization flux-system --with-source
 flux get kustomizations -A
 
 # Verificar que los secrets están en el cluster:
-kubectl get secrets -n serenamente-core
+kubectl get secrets -n serenidad-core
 # → NAME                     TYPE                             DATA
 # → iam-service-secrets       Opaque                           2
 # → gitlab-registry-secret    kubernetes.io/dockerconfigjson   1
 
-kubectl get secrets -n serenamente-data
+kubectl get secrets -n serenidad-data
 # → NAME                              TYPE     DATA
-# → cnpg-serenamente-admin-creds      Opaque   2
+# → cnpg-serenidad-admin-creds      Opaque   2
 # → cnpg-b2-credentials               Opaque   2
 
 # Si hay errores de decryption en FluxCD:
@@ -2002,8 +2002,8 @@ spec:
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: serenamente-pg
-  namespace: serenamente-data
+  name: serenidad-pg
+  namespace: serenidad-data
 spec:
   # PostgreSQL 17.4 — imagen oficial de CloudNativePG
   imageName: ghcr.io/cloudnative-pg/postgresql:17.4
@@ -2053,20 +2053,20 @@ spec:
   # Bootstrap — crear las 6 databases iniciales
   bootstrap:
     initdb:
-      database: serenamente_init   # DB temporal para el bootstrap
-      owner: serenamente_admin
+      database: serenidad_init   # DB temporal para el bootstrap
+      owner: serenidad_admin
       secret:
-        name: cnpg-serenamente-admin-creds
+        name: cnpg-serenidad-admin-creds
       # Las databases reales se crean via golang-migrate en los init containers
       postInitSQL:
         # IAM databases
-        - "CREATE DATABASE iam_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
-        - "CREATE DATABASE kratos_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
-        - "CREATE DATABASE openfga_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE iam_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE kratos_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE openfga_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
         # Domain databases
-        - "CREATE DATABASE scheduling_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
-        - "CREATE DATABASE clinical_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
-        - "CREATE DATABASE billing_db WITH OWNER serenamente_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE scheduling_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE clinical_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
+        - "CREATE DATABASE billing_db WITH OWNER serenidad_admin ENCODING 'UTF8' LC_COLLATE 'C' LC_CTYPE 'C' TEMPLATE template0;"
         # Extensiones en las databases relevantes
         - "\\c iam_db; CREATE EXTENSION IF NOT EXISTS pg_stat_statements; CREATE EXTENSION IF NOT EXISTS btree_gist;"
         - "\\c scheduling_db; CREATE EXTENSION IF NOT EXISTS pg_stat_statements; CREATE EXTENSION IF NOT EXISTS btree_gist;"
@@ -2091,7 +2091,7 @@ spec:
   # Se configura en Tarea V-17 — backup habilitado solo después de crear los secrets B2
   backup:
     barmanObjectStore:
-      destinationPath: "s3://serenamente-pg-backups/wal"
+      destinationPath: "s3://serenidad-pg-backups/wal"
       endpointURL: "https://s3.us-west-004.backblazeb2.com"   # Ajustar por región B2
       s3Credentials:
         accessKeyId:
@@ -2124,14 +2124,14 @@ spec:
 PG_ADMIN_PASSWORD=$(openssl rand -base64 32)
 
 # Cifrar y guardar con SOPS+age:
-./scripts/encrypt-secret.sh serenamente-data cnpg-serenamente-admin-creds \
-  "username=serenamente_admin" \
+./scripts/encrypt-secret.sh serenidad-data cnpg-serenidad-admin-creds \
+  "username=serenidad_admin" \
   "password=${PG_ADMIN_PASSWORD}"
 
 # BACKUP CRÍTICO: guardar la contraseña en el password manager antes de continuar:
 echo "PG_ADMIN_PASSWORD=${PG_ADMIN_PASSWORD}"
 
-git add infra/secrets/cnpg-serenamente-admin-creds.yaml
+git add infra/secrets/cnpg-serenidad-admin-creds.yaml
 git commit -m "feat: add cnpg admin credentials encrypted with SOPS"
 git push
 ```
@@ -2146,7 +2146,7 @@ resources:
   - helmrepository.yaml
   - helmrelease.yaml
   - cluster.yaml
-  - ../../../secrets/cnpg-serenamente-admin-creds.yaml  # SOPS-encrypted
+  - ../../../secrets/cnpg-serenidad-admin-creds.yaml  # SOPS-encrypted
   - ../../../secrets/cnpg-b2-credentials.yaml            # SOPS-encrypted (se crea en V-17)
 ```
 
@@ -2154,31 +2154,31 @@ resources:
 
 ```bash
 # Esperar a que el Cluster CRD esté Ready (~3-5 minutos en CX32):
-kubectl wait cluster serenamente-pg \
+kubectl wait cluster serenidad-pg \
   --for=condition=Ready \
-  -n serenamente-data \
+  -n serenidad-data \
   --timeout=300s
 
 # Verificar estado del cluster:
-kubectl get cluster serenamente-pg -n serenamente-data
+kubectl get cluster serenidad-pg -n serenidad-data
 # → NAME              AGE   INSTANCES   READY   STATUS         PRIMARY
-# → serenamente-pg    5m    1           1       Cluster in healthy state   serenamente-pg-1
+# → serenidad-pg    5m    1           1       Cluster in healthy state   serenidad-pg-1
 
 # Ver los secrets generados por CloudNativePG (uno por database):
-kubectl get secrets -n serenamente-data | grep cnpg
-# → serenamente-pg-app                kubernetes.io/basic-auth  ...
-# → serenamente-pg-superuser          kubernetes.io/basic-auth  ...
-# → serenamente-pg-ca                 Opaque                    ...
-# → serenamente-pg-replication        kubernetes.io/basic-auth  ...
+kubectl get secrets -n serenidad-data | grep cnpg
+# → serenidad-pg-app                kubernetes.io/basic-auth  ...
+# → serenidad-pg-superuser          kubernetes.io/basic-auth  ...
+# → serenidad-pg-ca                 Opaque                    ...
+# → serenidad-pg-replication        kubernetes.io/basic-auth  ...
 
 # Verificar que las 6 databases existen:
-kubectl exec -it serenamente-pg-1 -n serenamente-data -- \
-  psql -U serenamente_admin -c "\l"
+kubectl exec -it serenidad-pg-1 -n serenidad-data -- \
+  psql -U serenidad_admin -c "\l"
 # → iam_db, kratos_db, openfga_db, scheduling_db, clinical_db, billing_db
 
 # Verificar extensiones:
-kubectl exec -it serenamente-pg-1 -n serenamente-data -- \
-  psql -U serenamente_admin -d iam_db -c "\dx"
+kubectl exec -it serenidad-pg-1 -n serenidad-data -- \
+  psql -U serenidad_admin -d iam_db -c "\dx"
 # → btree_gist, pg_stat_statements
 ```
 
@@ -2192,10 +2192,10 @@ kubectl exec -it serenamente-pg-1 -n serenamente-data -- \
 source .envrc
 
 # Registros A para el dominio principal:
-# api.serenamente.com → Floating IP del VPS
+# api.sereni.dad → Floating IP del VPS
 # El proxy de Cloudflare (naranja ☁) está habilitado para protección DDoS.
 
-# Crear registro A para api.serenamente.com:
+# Crear registro A para api.sereni.dad:
 curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_records" \
   -H "Authorization: Bearer ${CF_API_TOKEN}" \
   -H "Content-Type: application/json" \
@@ -2205,12 +2205,12 @@ curl -s -X POST "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/dns_re
     "content": "'"${FLOATING_IP}"'",
     "ttl": 1,
     "proxied": true,
-    "comment": "Serenamente API — Traefik VPS"
+    "comment": "Serenidad API — Traefik VPS"
   }' | jq '.result.id'
 
 # Verificar que el DNS propaga (puede tardar 1-5 minutos con Cloudflare Proxy):
-dig api.serenamente.com @1.1.1.1
-# → api.serenamente.com.  300  IN  A  104.x.x.x  (IP de Cloudflare, no la del VPS — ✓ proxy activo)
+dig api.sereni.dad @1.1.1.1
+# → api.sereni.dad.  300  IN  A  104.x.x.x  (IP de Cloudflare, no la del VPS — ✓ proxy activo)
 ```
 
 > **Sobre Cloudflare Proxy vs DNS-only:** Con el proxy activo (ícono naranja ☁), la IP real del VPS está oculta detrás de los servidores de Cloudflare. Esto proporciona protección DDoS básica y mejora la distribución geográfica. El tráfico llega al VPS desde las IPs de Cloudflare, no desde las IPs de los clientes. **Esto NO interfiere con Let's Encrypt ACME HTTP-01** porque cert-manager hace el challenge desde dentro del cluster.
@@ -2266,7 +2266,7 @@ cat > buf.yaml <<'EOF'
 version: v2
 modules:
   - path: proto
-    name: buf.build/serenamente/events
+    name: buf.build/serenidad/events
 lint:
   use:
     - STANDARD
@@ -2282,7 +2282,7 @@ managed:
   enabled: true
   override:
     - file_option: go_package_prefix
-      value: gitlab.com/serenamente/serenidad-platform/packages/events/gen
+      value: gitlab.com/serenidad/serenidad-platform/packages/events/gen
 plugins:
   - remote: buf.build/protocolbuffers/go
     out: gen/go
@@ -2302,7 +2302,7 @@ EOF
 // packages/events/proto/iam/v1/events.proto
 syntax = "proto3";
 package iam.v1;
-option go_package = "gitlab.com/serenamente/serenidad-platform/packages/events/gen/iam/v1;iamv1";
+option go_package = "gitlab.com/serenidad/serenidad-platform/packages/events/gen/iam/v1;iamv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -2313,7 +2313,7 @@ message UserRegistered {
   string tenant_id = 3;         // UUIDv7 — organización del usuario
   string email = 4;             // Email del usuario (hash SHA-256 para privacidad en logs)
   string role = 5;              // "patient" | "doctor" | "admin"
-  string did = 6;               // Decentralized Identifier: did:web:serenamente.com:users:UUID
+  string did = 6;               // Decentralized Identifier: did:web:sereni.dad:users:UUID
   google.protobuf.Timestamp occurred_at = 7;   // Timestamp UTC RFC 3339
   google.protobuf.Timestamp emitted_at = 8;    // Timestamp de emisión por el Outbox Worker
 }
@@ -2335,7 +2335,7 @@ message DoctorOnboarded {
 // packages/events/proto/scheduling/v1/events.proto
 syntax = "proto3";
 package scheduling.v1;
-option go_package = "gitlab.com/serenamente/serenidad-platform/packages/events/gen/scheduling/v1;schedulingv1";
+option go_package = "gitlab.com/serenidad/serenidad-platform/packages/events/gen/scheduling/v1;schedulingv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -2369,7 +2369,7 @@ message AppointmentCancelled {
 // packages/events/proto/clinical/v1/events.proto
 syntax = "proto3";
 package clinical.v1;
-option go_package = "gitlab.com/serenamente/serenidad-platform/packages/events/gen/clinical/v1;clinicalv1";
+option go_package = "gitlab.com/serenidad/serenidad-platform/packages/events/gen/clinical/v1;clinicalv1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -2420,12 +2420,12 @@ buf generate
 
 # Verificar que el código generado compila:
 cd gen/go
-go mod init gitlab.com/serenamente/serenidad-platform/packages/events/gen
+go mod init gitlab.com/serenidad/serenidad-platform/packages/events/gen
 go mod tidy
 go build ./...
 
 # Verificar breaking changes (útil en CI para detectar incompatibilidades):
-buf breaking --against "https://gitlab.com/serenamente/serenidad-platform.git#branch=main,subdir=packages/events/proto"
+buf breaking --against "https://gitlab.com/serenidad/serenidad-platform.git#branch=main,subdir=packages/events/proto"
 # En el primer commit esto no ejecuta nada (sin historia de comparación)
 
 # Commitear los schemas y el código generado:
@@ -2457,7 +2457,7 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: kratos
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   interval: 1h
   dependsOn:
@@ -2476,15 +2476,15 @@ spec:
   values:
     kratos:
       config:
-        dsn: "postgres://serenamente_admin:${PG_ADMIN_PASSWORD}@serenamente-pg-rw.serenamente-data.svc.cluster.local:5432/kratos_db?sslmode=require"
+        dsn: "postgres://serenidad_admin:${PG_ADMIN_PASSWORD}@serenidad-pg-rw.serenidad-data.svc.cluster.local:5432/kratos_db?sslmode=require"
 
         serve:
           public:
-            base_url: "https://api.serenamente.com/auth/"
+            base_url: "https://api.sereni.dad/auth/"
             cors:
               enabled: true
               allowed_origins:
-                - "https://app.serenamente.com"
+                - "https://app.sereni.dad"
               allowed_methods:
                 - GET
                 - POST
@@ -2499,49 +2499,49 @@ spec:
                 - Content-Type
                 - Set-Cookie
           admin:
-            base_url: "http://kratos-admin.serenamente-core.svc.cluster.local:4434/"
+            base_url: "http://kratos-admin.serenidad-core.svc.cluster.local:4434/"
 
         selfservice:
-          default_browser_return_url: "https://app.serenamente.com/"
+          default_browser_return_url: "https://app.sereni.dad/"
           allowed_return_urls:
-            - "https://app.serenamente.com"
-            - "https://api.serenamente.com"
+            - "https://app.sereni.dad"
+            - "https://api.sereni.dad"
 
           flows:
             login:
-              ui_url: "https://app.serenamente.com/login"
+              ui_url: "https://app.sereni.dad/login"
               lifespan: "1h"
             registration:
-              ui_url: "https://app.serenamente.com/register"
+              ui_url: "https://app.sereni.dad/register"
               lifespan: "30m"
             verification:
               enabled: true
-              ui_url: "https://app.serenamente.com/verification"
+              ui_url: "https://app.sereni.dad/verification"
               use: "code"  # Código de 6 dígitos via email
               after:
-                default_browser_return_url: "https://app.serenamente.com/dashboard"
+                default_browser_return_url: "https://app.sereni.dad/dashboard"
             recovery:
               enabled: true
-              ui_url: "https://app.serenamente.com/recovery"
+              ui_url: "https://app.sereni.dad/recovery"
               use: "code"
             settings:
-              ui_url: "https://app.serenamente.com/settings"
+              ui_url: "https://app.sereni.dad/settings"
               privileged_session_max_age: "15m"
               after:
-                default_browser_return_url: "https://app.serenamente.com/dashboard"
+                default_browser_return_url: "https://app.sereni.dad/dashboard"
             logout:
               after:
-                default_browser_return_url: "https://app.serenamente.com/"
+                default_browser_return_url: "https://app.sereni.dad/"
 
           methods:
             passkey:
               enabled: true
               config:
                 rp:
-                  display_name: "Serenamente — Clínica Digital"
-                  id: "serenamente.com"
+                  display_name: "Serenidad — Clínica Digital"
+                  id: "sereni.dad"
                   origins:
-                    - "https://app.serenamente.com"
+                    - "https://app.sereni.dad"
             webauthn:
               enabled: false   # Redundante si Passkeys está habilitado
             password:
@@ -2560,8 +2560,8 @@ spec:
         courier:
           smtp:
             connection_uri: "smtps://resend:${RESEND_API_KEY}@smtp.resend.com:465/"
-            from_address: "noreply@serenamente.com"
-            from_name: "Serenamente"
+            from_address: "noreply@sereni.dad"
+            from_name: "Serenidad"
 
         secrets:
           cookie:
@@ -2587,7 +2587,7 @@ spec:
 ```json
 // infra/apps/kratos/schemas/patient.json
 {
-  "$id": "https://serenamente.com/schemas/identity/patient.json",
+  "$id": "https://sereni.dad/schemas/identity/patient.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Patient",
   "type": "object",
@@ -2642,7 +2642,7 @@ spec:
 ```json
 // infra/apps/kratos/schemas/doctor.json
 {
-  "$id": "https://serenamente.com/schemas/identity/doctor.json",
+  "$id": "https://sereni.dad/schemas/identity/doctor.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Doctor",
   "type": "object",
@@ -2701,7 +2701,7 @@ spec:
 KRATOS_COOKIE_SECRET=$(openssl rand -hex 32)
 KRATOS_CIPHER_SECRET=$(openssl rand -hex 32)
 
-./scripts/encrypt-secret.sh serenamente-core kratos-secrets \
+./scripts/encrypt-secret.sh serenidad-core kratos-secrets \
   "KRATOS_COOKIE_SECRET=${KRATOS_COOKIE_SECRET}" \
   "KRATOS_CIPHER_SECRET=${KRATOS_CIPHER_SECRET}" \
   "RESEND_API_KEY=${RESEND_API_KEY}"
@@ -2719,12 +2719,12 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: kratos-public
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/auth/`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/auth/`)"
       kind: Rule
       services:
         - name: kratos-public
@@ -2735,28 +2735,28 @@ spec:
   tls:
     certResolver: letsencrypt
     domains:
-      - main: api.serenamente.com
+      - main: api.sereni.dad
 ```
 
 ### 18.5 Verificar Kratos
 
 ```bash
 # Verificar pods:
-kubectl get pods -n serenamente-core | grep kratos
+kubectl get pods -n serenidad-core | grep kratos
 # → kratos-xxx   Running
 
 # Verificar health de Kratos:
-kubectl exec -n serenamente-core deployment/kratos -- \
+kubectl exec -n serenidad-core deployment/kratos -- \
   wget -qO- http://localhost:4434/health/ready
 # → {"status":"ok"}
 
 # Verificar desde el exterior:
-curl https://api.serenamente.com/auth/.well-known/ory/webauthn.js
+curl https://api.sereni.dad/auth/.well-known/ory/webauthn.js
 # → Debe retornar el JavaScript de WebAuthn de Kratos
 
 # Verificar que la base de datos fue migrada:
-kubectl exec -it serenamente-pg-1 -n serenamente-data -- \
-  psql -U serenamente_admin -d kratos_db -c "\dt"
+kubectl exec -it serenidad-pg-1 -n serenidad-data -- \
+  psql -U serenidad_admin -d kratos_db -c "\dt"
 # → Debe listar las tablas de Kratos (identity, session, etc.)
 ```
 
@@ -2816,7 +2816,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   tenant_id     UUID        NOT NULL,            -- Organización del usuario
   role          TEXT        NOT NULL CHECK (role IN ('patient', 'doctor', 'admin')),
   email_hash    TEXT        NOT NULL,            -- SHA-256 del email (privacidad en logs)
-  did           TEXT        NOT NULL UNIQUE,     -- did:web:serenamente.com:users:{uuid}
+  did           TEXT        NOT NULL UNIQUE,     -- did:web:sereni.dad:users:{uuid}
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -2870,7 +2870,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: iam-service
-  namespace: serenamente-core
+  namespace: serenidad-core
   annotations:
     # FluxCD auto-update: actualiza la imagen cuando GitLab CI pushea nueva versión a registry.gitlab.com
     image.fluxcd.io/update-policy: semver
@@ -2894,7 +2894,7 @@ spec:
       # Init container: ejecutar migraciones ANTES de que el servicio arranque
       initContainers:
         - name: migrate
-          image: registry.gitlab.com/serenamente/serenidad-platform/iam-service:latest
+          image: registry.gitlab.com/serenidad/serenidad-platform/iam-service:latest
           command: ["/app/iam-service", "migrate"]
           env:
             - name: DATABASE_URL
@@ -2912,7 +2912,7 @@ spec:
 
       containers:
         - name: iam-service
-          image: registry.gitlab.com/serenamente/serenidad-platform/iam-service:latest   # {flux-image}
+          image: registry.gitlab.com/serenidad/serenidad-platform/iam-service:latest   # {flux-image}
           ports:
             - name: http
               containerPort: 8080
@@ -2926,7 +2926,7 @@ spec:
                   name: cnpg-iam-db-credentials
                   key: uri
             - name: KRATOS_ADMIN_URL
-              value: "http://kratos-admin.serenamente-core.svc.cluster.local:4434"
+              value: "http://kratos-admin.serenidad-core.svc.cluster.local:4434"
             - name: JWT_PRIVATE_KEY_ED25519
               valueFrom:
                 secretKeyRef:
@@ -2938,14 +2938,14 @@ spec:
                   name: iam-service-secrets
                   key: JWT_PUBLIC_KEY_ED25519
             - name: JWT_ISSUER
-              value: "https://api.serenamente.com"
+              value: "https://api.sereni.dad"
             - name: JWT_AUDIENCE
-              value: "serenamente-api"
+              value: "serenidad-api"
             - name: JWT_TTL_SECONDS
               value: "3600"   # 1 hora
             # NATS — solo en Fase 2. En Fase 1 el Outbox Worker espera a NATS con backoff.
             - name: NATS_URL
-              value: "nats://nats.serenamente-data.svc.cluster.local:4222"
+              value: "nats://nats.serenidad-data.svc.cluster.local:4222"
             - name: ENVIRONMENT
               value: "production"
 
@@ -3002,14 +3002,14 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - serenamente-pg
+                        - serenidad-pg
                 topologyKey: kubernetes.io/hostname
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: iam-service
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   selector:
     app: iam-service
@@ -3031,12 +3031,12 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: iam-service-public
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: "Host(`api.serenamente.com`) && PathPrefix(`/api/iam/`)"
+    - match: "Host(`api.sereni.dad`) && PathPrefix(`/api/iam/`)"
       kind: Rule
       services:
         - name: iam-service
@@ -3075,7 +3075,7 @@ echo "JWT Public Key (base64):"
 echo "${JWT_PUBLIC_KEY}"
 
 # Cifrar y guardar con SOPS+age:
-./scripts/encrypt-secret.sh serenamente-core iam-service-secrets \
+./scripts/encrypt-secret.sh serenidad-core iam-service-secrets \
   "JWT_PRIVATE_KEY_ED25519=${JWT_PRIVATE_KEY}" \
   "JWT_PUBLIC_KEY_ED25519=${JWT_PUBLIC_KEY}"
 
@@ -3094,11 +3094,11 @@ El cluster Kubernetes necesita credenciales para descargar imágenes desde `regi
 ```bash
 # Generar el Secret de tipo docker-registry en memoria y cifrarlo con SOPS:
 kubectl create secret docker-registry gitlab-registry-secret \
-  --namespace serenamente-core \
+  --namespace serenidad-core \
   --docker-server=registry.gitlab.com \
   --docker-username="${GITLAB_DEPLOY_TOKEN_USER}" \
   --docker-password="${GITLAB_DEPLOY_TOKEN}" \
-  --docker-email="ops@serenamente.com" \
+  --docker-email="ops@sereni.dad" \
   --dry-run=client -o yaml \
 | sops \
   --config infra/secrets/.sops.yaml \
@@ -3196,23 +3196,23 @@ bun add jose   # Para verificación de JWT Ed25519 en el edge
 
 ```toml
 # apps/bff/wrangler.toml
-name = "serenamente-bff"
+name = "serenidad-bff"
 main = "src/index.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-BACKEND_URL = "https://api.serenamente.com"
+BACKEND_URL = "https://api.sereni.dad"
 ENVIRONMENT = "production"
-JWT_ISSUER = "https://api.serenamente.com"
-JWT_AUDIENCE = "serenamente-api"
+JWT_ISSUER = "https://api.sereni.dad"
+JWT_AUDIENCE = "serenidad-api"
 
 # Los secrets (JWT_PUBLIC_KEY) se agregan via wrangler secret put — NO en wrangler.toml
 # wrangler secret put JWT_PUBLIC_KEY_ED25519
 
 [[routes]]
-pattern = "api.serenamente.com/bff/*"
-zone_name = "serenamente.com"
+pattern = "api.sereni.dad/bff/*"
+zone_name = "sereni.dad"
 ```
 
 ### 20.3 BFF principal con verificación de JWT
@@ -3239,7 +3239,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 // ─── Middlewares globales ───────────────────────────────────────
 app.use('*', secureHeaders())
 app.use('*', cors({
-  origin: ['https://app.serenamente.com'],
+  origin: ['https://app.sereni.dad'],
   allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Authorization', 'Content-Type', 'X-Session-Token'],
   exposeHeaders: ['Content-Type'],
@@ -3363,10 +3363,10 @@ bun run build  # o: wrangler deploy --dry-run para verificar sin desplegar
 # Deploy a producción:
 wrangler deploy
 # → Uploading...
-# → Deployed serenamente-bff (1.23 kB) to serenamente.com
+# → Deployed serenidad-bff (1.23 kB) to sereni.dad
 
 # Verificar el deploy:
-curl https://api.serenamente.com/bff/health
+curl https://api.sereni.dad/bff/health
 # → {"status":"ok","service":"bff"}
 ```
 
@@ -3395,20 +3395,20 @@ grep "@qwik.dev" package.json
 
 ```bash
 # Crear el proyecto en CF Pages via CLI:
-wrangler pages project create serenamente-web \
+wrangler pages project create serenidad-web \
   --production-branch main
 
 # Configurar variables de entorno en CF Pages:
-wrangler pages secret put VITE_API_BASE_URL --project-name serenamente-web
-# → Enter a secret value: https://api.serenamente.com/bff
+wrangler pages secret put VITE_API_BASE_URL --project-name serenidad-web
+# → Enter a secret value: https://api.sereni.dad/bff
 
-wrangler pages secret put VITE_KRATOS_URL --project-name serenamente-web
-# → Enter a secret value: https://api.serenamente.com/auth
+wrangler pages secret put VITE_KRATOS_URL --project-name serenidad-web
+# → Enter a secret value: https://api.sereni.dad/auth
 
 # El pipeline de CI/CD (V-18) hace el deploy automático en cada push a main.
 # Para deploy manual:
 bun run build
-wrangler pages deploy dist/ --project-name serenamente-web --branch main
+wrangler pages deploy dist/ --project-name serenidad-web --branch main
 ```
 
 ---
@@ -3419,7 +3419,7 @@ wrangler pages deploy dist/ --project-name serenamente-web --branch main
 
 ```bash
 # Cifrar las credenciales de Backblaze B2 con SOPS+age:
-./scripts/encrypt-secret.sh serenamente-data cnpg-b2-credentials \
+./scripts/encrypt-secret.sh serenidad-data cnpg-b2-credentials \
   "B2_KEY_ID=${B2_KEY_ID}" \
   "B2_APPLICATION_KEY=${B2_APPLICATION_KEY}"
 
@@ -3436,13 +3436,13 @@ git push
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
-  name: serenamente-pg-daily-backup
-  namespace: serenamente-data
+  name: serenidad-pg-daily-backup
+  namespace: serenidad-data
 spec:
   schedule: "0 2 * * *"   # 02:00 UTC todos los días
   backupOwnerReference: self
   cluster:
-    name: serenamente-pg
+    name: serenidad-pg
   immediate: true   # Ejecutar un backup inmediatamente al crear este CRD
 ```
 
@@ -3450,22 +3450,22 @@ spec:
 
 ```bash
 # Verificar que el backup fue creado:
-kubectl get backup -n serenamente-data
+kubectl get backup -n serenidad-data
 # → NAME                                    AGE   STATUS      CLUSTER
-# → serenamente-pg-daily-backup-xxxxxxxxxx  5m    Completed   serenamente-pg
+# → serenidad-pg-daily-backup-xxxxxxxxxx  5m    Completed   serenidad-pg
 
 # Ver detalles del backup:
-kubectl describe backup serenamente-pg-daily-backup-xxx -n serenamente-data
-# → Destination: s3://serenamente-pg-backups/wal/base/...
+kubectl describe backup serenidad-pg-daily-backup-xxx -n serenidad-data
+# → Destination: s3://serenidad-pg-backups/wal/base/...
 
 # Verificar WAL archiving:
-kubectl logs serenamente-pg-1 -n serenamente-data | grep -i "wal\|archive\|barman"
+kubectl logs serenidad-pg-1 -n serenidad-data | grep -i "wal\|archive\|barman"
 # → Archiving WAL segment: 000000010000000000000001
 # → WAL file archived successfully
 
 # Verificar en Backblaze B2 (desde tu máquina local):
 # Instalar b2 CLI: https://www.backblaze.com/docs/cloud-storage-command-line-tools
-b2 ls serenamente-pg-backups
+b2 ls serenidad-pg-backups
 # → wal/
 # → wal/base/
 # → wal/wals/
@@ -3484,7 +3484,7 @@ GitLab CI/CD usa un único fichero `.gitlab-ci.yml` en la raíz del monorepo com
 - `$CI_COMMIT_SHORT_SHA` → SHA corto del commit (equivalente a `GITHUB_SHA` en GitHub Actions)
 - `$CI_JOB_TOKEN` → token de corta duración para operaciones Git en el mismo proyecto
 - `$CI_SERVER_HOST` → `gitlab.com`
-- `$CI_PROJECT_PATH` → `serenamente/serenidad-platform`
+- `$CI_PROJECT_PATH` → `serenidad/serenidad-platform`
 
 ### 23.1 Orquestador principal `.gitlab-ci.yml`
 
@@ -3578,7 +3578,7 @@ build-push-iam:
       sed -i "s|${CI_REGISTRY_IMAGE}/iam-service:.*|${CI_REGISTRY_IMAGE}/iam-service:${CI_COMMIT_SHORT_SHA}|g" \
         infra/apps/iam-service/deployment.yaml
       git config user.name "GitLab CI"
-      git config user.email "ci@serenamente.com"
+      git config user.email "ci@sereni.dad"
       git remote set-url origin "https://oauth2:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
       git add infra/apps/iam-service/deployment.yaml
       git commit -m "chore: update iam-service image to sha-${CI_COMMIT_SHORT_SHA}" || true
@@ -3631,10 +3631,10 @@ deploy-web:
     - bun install --frozen-lockfile
   script:
     - bun run build
-    - wrangler pages deploy dist/ --project-name=serenamente-web --branch=main
+    - wrangler pages deploy dist/ --project-name=serenidad-web --branch=main
   variables:
-    VITE_API_BASE_URL: https://api.serenamente.com/bff
-    VITE_KRATOS_URL: https://api.serenamente.com/auth
+    VITE_API_BASE_URL: https://api.sereni.dad/bff
+    VITE_KRATOS_URL: https://api.sereni.dad/auth
     CLOUDFLARE_API_TOKEN: $CF_API_TOKEN
     CLOUDFLARE_ACCOUNT_ID: $CF_ACCOUNT_ID
 ```
@@ -3649,14 +3649,14 @@ Talos + Kubernetes con flannel permite usar NetworkPolicies para limitar el trá
 
 ```yaml
 # infra/infrastructure/network-policies/deny-all-default.yaml
-# Política base: denegar todo el tráfico por defecto en serenamente-core y serenamente-data.
+# Política base: denegar todo el tráfico por defecto en serenidad-core y serenidad-data.
 # Los pods solo pueden comunicarse si hay una NetworkPolicy explícita que lo permita.
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all-ingress
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   podSelector: {}   # Aplica a todos los pods del namespace
   policyTypes:
@@ -3668,7 +3668,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: deny-all-ingress
-  namespace: serenamente-data
+  namespace: serenidad-data
 spec:
   podSelector: {}
   policyTypes:
@@ -3680,7 +3680,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-traefik-to-iam
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   podSelector:
     matchLabels:
@@ -3701,18 +3701,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-iam-to-postgres
-  namespace: serenamente-data
+  namespace: serenidad-data
 spec:
   podSelector:
     matchLabels:
-      cnpg.io/cluster: serenamente-pg
+      cnpg.io/cluster: serenidad-pg
   policyTypes:
     - Ingress
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
-              kubernetes.io/metadata.name: serenamente-core
+              kubernetes.io/metadata.name: serenidad-core
       ports:
         - protocol: TCP
           port: 5432
@@ -3722,7 +3722,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-dns-egress
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   podSelector: {}
   policyTypes:
@@ -3755,7 +3755,7 @@ MY_IP=$(curl -s https://ifconfig.me)
 echo "Tu IP actual: ${MY_IP}"
 
 # Obtener el ID del firewall:
-FIREWALL_ID=$(hcloud firewall list -o json | jq -r '.[] | select(.name=="serenamente-prod-fw") | .id')
+FIREWALL_ID=$(hcloud firewall list -o json | jq -r '.[] | select(.name=="serenidad-prod-fw") | .id')
 
 # Actualizar regla del puerto Talos (50000):
 hcloud firewall replace-rule ${FIREWALL_ID} \
@@ -3804,11 +3804,11 @@ flux get all
 # → kustomization     True    Applied revision: main@sha1:...
 
 # 4. Verificar el rollout:
-kubectl rollout status deployment/iam-service -n serenamente-core
+kubectl rollout status deployment/iam-service -n serenidad-core
 # → deployment "iam-service" successfully rolled out
 
 # 5. Verificar logs en tiempo real:
-kubectl logs -f deployment/iam-service -n serenamente-core
+kubectl logs -f deployment/iam-service -n serenidad-core
 ```
 
 ### 25.2 Ciclo de deploy de emergencia (bypass CI para hotfix crítico)
@@ -3821,16 +3821,16 @@ Solo para bugs críticos en producción que no pueden esperar el pipeline CI.
 # 1. Hacer cambio mínimo en el código
 # 2. Build local de la imagen:
 cd services/iam
-docker build -t registry.gitlab.com/serenamente/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M) .
+docker build -t registry.gitlab.com/serenidad/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M) .
 
 # 3. Login y push directo a GitLab Container Registry:
 docker login registry.gitlab.com -u ${GITLAB_USER} -p ${GITLAB_TOKEN}
-docker push registry.gitlab.com/serenamente/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M)
+docker push registry.gitlab.com/serenidad/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M)
 
 # 4. Actualizar la imagen directamente en el cluster (bypass FluxCD temporalmente):
 kubectl set image deployment/iam-service \
-  iam-service=registry.gitlab.com/serenamente/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M) \
-  -n serenamente-core
+  iam-service=registry.gitlab.com/serenidad/serenidad-platform/iam-service:hotfix-$(date +%Y%m%d%H%M) \
+  -n serenidad-core
 
 # 5. Después del fix: hacer commit, push, y dejar que FluxCD re-sincronice a la versión normal.
 # FluxCD revertirá el hotfix manual a la versión en Git — eso es correcto.
@@ -3901,10 +3901,10 @@ kubectl get nodes
 
 ```bash
 # Si el VPS no responde — verificar en Hetzner:
-hcloud server describe serenamente-prod-01
+hcloud server describe serenidad-prod-01
 
 # Si el servidor está parado, iniciarlo:
-hcloud server poweron serenamente-prod-01
+hcloud server poweron serenidad-prod-01
 
 # Si el servidor está corrupto, reconstruirlo:
 # TODOS LOS DATOS SE PIERDEN EXCEPTO:
@@ -3915,9 +3915,9 @@ hcloud server poweron serenamente-prod-01
 # - Las imágenes en registry.gitlab.com
 
 # 1. Poner el servidor en rescue mode:
-hcloud server enable-rescue serenamente-prod-01 \
-  --type linux64 --ssh-key serenamente-admin-key
-hcloud server reset serenamente-prod-01
+hcloud server enable-rescue serenidad-prod-01 \
+  --type linux64 --ssh-key serenidad-admin-key
+hcloud server reset serenidad-prod-01
 
 # 2. Reinstalar Talos desde rescue (ver Tarea V-02):
 # ... (repetir proceso de flasheo)
@@ -3933,9 +3933,9 @@ talosctl bootstrap --nodes ${FLOATING_IP}
 # flux bootstrap gitlab ... (repetir Tarea V-05)
 
 # 6. CloudNativePG restaura PostgreSQL desde B2:
-kubectl cnpg restore serenamente-pg \
-  --backup serenamente-pg-daily-backup-latest \
-  -n serenamente-data
+kubectl cnpg restore serenidad-pg \
+  --backup serenidad-pg-daily-backup-latest \
+  -n serenidad-data
 # O usar PITR para recuperar hasta un punto específico en el tiempo.
 
 # Tiempo de recuperación estimado: 30-60 minutos para un servidor completamente nuevo.
@@ -3950,7 +3950,7 @@ En Fase 1 no se despliega el PLG stack completo (Prometheus + Loki + Tempo + Gra
 
 ### 26.1 Health checks obligatorios en cada microservicio Go
 
-Todo microservicio Go en Serenamente debe implementar estos tres endpoints como parte de su definición de hecho:
+Todo microservicio Go en Serenidad debe implementar estos tres endpoints como parte de su definición de hecho:
 
 ```go
 // Liveness: el proceso está vivo (para que k8s haga restart si falla)
@@ -3975,10 +3975,10 @@ kubectl get pods -A | grep -v "Running\|Completed"
 # → Solo muestra pods que NO están en estado normal
 
 # Logs de un pod en tiempo real:
-kubectl logs -f deployment/iam-service -n serenamente-core
+kubectl logs -f deployment/iam-service -n serenidad-core
 
 # Logs de los últimos N minutos:
-kubectl logs deployment/iam-service -n serenamente-core --since=10m
+kubectl logs deployment/iam-service -n serenidad-core --since=10m
 
 # Ver eventos del cluster (útil para diagnosticar problemas de scheduling):
 kubectl get events -A --sort-by='.lastTimestamp' | tail -20
@@ -3988,7 +3988,7 @@ flux get all --status-selector ready=false
 # → Solo muestra recursos de FluxCD que NO están sincronizados correctamente
 
 # Estado de CloudNativePG:
-kubectl get cluster,backup,scheduledbackup -n serenamente-data
+kubectl get cluster,backup,scheduledbackup -n serenidad-data
 
 # CPU y memoria de pods:
 kubectl top pods -A --sort-by=memory
@@ -4005,7 +4005,7 @@ Hetzner Cloud ofrece alertas básicas de infraestructura en el panel de control:
 - Network traffic (útil para detectar tráfico inusual)
 - Server unavailability (ping check)
 
-Configurar en: Hetzner Cloud Console → serenamente-prod-01 → Monitoring → Configure Alerts.
+Configurar en: Hetzner Cloud Console → serenidad-prod-01 → Monitoring → Configure Alerts.
 
 > El PLG stack completo (Prometheus + Loki + Tempo + Grafana + Alertmanager → Telegram) se despliega en **Tarea 3.C y 3.D de Fase 3**.
 
@@ -4017,10 +4017,10 @@ Configurar en: Hetzner Cloud Console → serenamente-prod-01 → Monitoring → 
 
 ```bash
 # Ver la razón del NotReady:
-kubectl describe node serenamente-prod-01 | grep -A20 "Conditions:"
+kubectl describe node serenidad-prod-01 | grep -A20 "Conditions:"
 
 # Verificar taints (el CCM puede haber puesto el taint uninitialized):
-kubectl get node serenamente-prod-01 -o json | jq '.spec.taints'
+kubectl get node serenidad-prod-01 -o json | jq '.spec.taints'
 
 # Si el taint es node.cloudprovider.kubernetes.io/uninitialized:
 # → El CCM no está corriendo o tiene error. Verificar:
@@ -4065,33 +4065,33 @@ kubectl describe certificate <nombre> -n <namespace>
 kubectl get challenges -A
 
 # El error más común: el dominio no resuelve a la IP del VPS
-dig api.serenamente.com
+dig api.sereni.dad
 # Debe resolver a la IP de Cloudflare (si el proxy está activo) o al VPS (si es DNS-only)
 
 # Verificar que el challenge HTTP-01 funciona:
 # cert-manager crea un pod temporal en el namespace del Certificate que sirve el challenge
-kubectl get pods -n serenamente-core | grep cm-acme
+kubectl get pods -n serenidad-core | grep cm-acme
 
 # Ver logs del cert-manager:
 kubectl logs deployment/cert-manager -n cert-manager | grep -i "error\|challenge" | tail -20
 
 # Solución común: asegurarse de que el puerto :80 está abierto en el Firewall de Hetzner
-hcloud firewall describe serenamente-prod-fw | grep -A3 "80"
+hcloud firewall describe serenidad-prod-fw | grep -A3 "80"
 ```
 
 ### 27.4 PostgreSQL no inicia
 
 ```bash
 # Ver estado del Cluster CloudNativePG:
-kubectl describe cluster serenamente-pg -n serenamente-data
+kubectl describe cluster serenidad-pg -n serenidad-data
 # → Buscar: Status, Events
 
 # Ver logs del pod de PostgreSQL:
-kubectl logs serenamente-pg-1 -n serenamente-data | tail -50
+kubectl logs serenidad-pg-1 -n serenidad-data | tail -50
 
 # Error común: el PVC no se pudo crear (problema con StorageClass):
-kubectl get pvc -n serenamente-data
-kubectl describe pvc serenamente-pg-1 -n serenamente-data
+kubectl get pvc -n serenidad-data
+kubectl describe pvc serenidad-pg-1 -n serenidad-data
 
 # Verificar que local-path-provisioner está corriendo:
 kubectl get pods -n kube-system | grep local-path
@@ -4106,36 +4106,36 @@ kubectl get storageclass
 
 ```bash
 # Ver logs de Kratos:
-kubectl logs deployment/kratos -n serenamente-core | grep -i "error\|database\|dsn"
+kubectl logs deployment/kratos -n serenidad-core | grep -i "error\|database\|dsn"
 
 # Verificar que el Secret de credenciales existe:
-kubectl get secret kratos-secrets -n serenamente-core
+kubectl get secret kratos-secrets -n serenidad-core
 
 # Verificar conectividad a PostgreSQL desde el pod de Kratos:
-kubectl exec -it deployment/kratos -n serenamente-core -- \
-  wget -qO- http://serenamente-pg-rw.serenamente-data.svc.cluster.local:5432/ || true
+kubectl exec -it deployment/kratos -n serenidad-core -- \
+  wget -qO- http://serenidad-pg-rw.serenidad-data.svc.cluster.local:5432/ || true
 # No debe retornar "connection refused"
 
 # Verificar NetworkPolicy — puede estar bloqueando la conexión:
-kubectl get networkpolicies -n serenamente-data
+kubectl get networkpolicies -n serenidad-data
 ```
 
 ### 27.6 El IAM Service retorna 500 en /internal/validate-token
 
 ```bash
 # Ver logs del IAM Service:
-kubectl logs deployment/iam-service -n serenamente-core --since=5m
+kubectl logs deployment/iam-service -n serenidad-core --since=5m
 
 # Verificar que el Secret JWT existe:
-kubectl get secret iam-service-secrets -n serenamente-core
+kubectl get secret iam-service-secrets -n serenidad-core
 
 # Verificar que Kratos Admin API está accesible:
-kubectl exec -it deployment/iam-service -n serenamente-core -- \
-  wget -qO- http://kratos-admin.serenamente-core.svc.cluster.local:4434/health/ready
+kubectl exec -it deployment/iam-service -n serenidad-core -- \
+  wget -qO- http://kratos-admin.serenidad-core.svc.cluster.local:4434/health/ready
 # → {"status":"ok"}
 
 # Verificar las variables de entorno del pod:
-kubectl exec -it deployment/iam-service -n serenamente-core -- env | grep -v KEY | grep -v SECRET
+kubectl exec -it deployment/iam-service -n serenidad-core -- env | grep -v KEY | grep -v SECRET
 ```
 
 ### 27.7 Traefik no enruta correctamente
@@ -4157,8 +4157,8 @@ curl http://localhost:9000/api/rawdata | jq '.routers | keys'
 # → Ver todas las rutas configuradas
 
 # Test de acceso directo a la IP del VPS (bypass Cloudflare):
-curl -k --resolve api.serenamente.com:443:${FLOATING_IP} \
-  https://api.serenamente.com/auth/.well-known/ory/webauthn.js
+curl -k --resolve api.sereni.dad:443:${FLOATING_IP} \
+  https://api.sereni.dad/auth/.well-known/ory/webauthn.js
 ```
 
 ---
@@ -4174,7 +4174,7 @@ Esta sección define con precisión cuándo la Fase 1 está **completa** y lista
 | I-01 | VPS Hetzner CX32 corriendo con Talos Linux v1.10.x | `talosctl version --nodes ${FLOATING_IP}` → v1.10.x |
 | I-02 | Kubernetes 1.33.x funcionando single-node | `kubectl get nodes` → `Ready control-plane v1.33.x` |
 | I-03 | Hetzner CCM corriendo, nodo sin taint uninitialized | `kubectl get node` → sin taints del CCM |
-| I-04 | Floating IP asignada y estable | `hcloud floating-ip describe serenamente-prod-fip` → `Assigned` |
+| I-04 | Floating IP asignada y estable | `hcloud floating-ip describe serenidad-prod-fip` → `Assigned` |
 | I-05 | Firewall de Hetzner correctamente configurado | Puertos 80, 443 públicos; 50000, 6443 restringidos a IP de trabajo |
 
 ### 28.2 GitOps y CI/CD (Tareas V-05 a V-06, V-18)
@@ -4184,16 +4184,16 @@ Esta sección define con precisión cuándo la Fase 1 está **completa** y lista
 | G-01 | FluxCD v2.x sincronizando la rama main del monorepo | `flux get all` → todos Ready |
 | G-02 | Push a `services/iam/` desencadena build + deploy automático | `git push` → GitLab CI build OK → FluxCD deploy OK |
 | G-03 | Push a `apps/bff/` desencadena deploy a CF Workers | `wrangler deploy` en GitLab CI → BFF accesible |
-| G-04 | Push a `apps/web/` desencadena deploy a CF Pages | Deploy OK → `https://app.serenamente.com` accesible |
+| G-04 | Push a `apps/web/` desencadena deploy a CF Pages | Deploy OK → `https://app.sereni.dad` accesible |
 | G-05 | Todos los secrets sensibles cifrados con SOPS+age en Git | Sin secrets en texto plano en ningún commit; `sops -d infra/secrets/*.yaml` funciona con la clave age |
 
 ### 28.3 Networking y TLS (Tareas V-07 a V-08, V-11)
 
 | # | Criterio | Verificación |
 |---|---------|-------------|
-| N-01 | cert-manager emite certificado Let's Encrypt para `api.serenamente.com` | `kubectl get certificate -A` → Ready: True |
-| N-02 | HTTPS funciona con certificado de confianza global | `curl https://api.serenamente.com/auth/.well-known/ory/webauthn.js` → HTTP 200, sin warnings TLS |
-| N-03 | HTTP redirige a HTTPS automáticamente | `curl http://api.serenamente.com` → 308 Permanent Redirect |
+| N-01 | cert-manager emite certificado Let's Encrypt para `api.sereni.dad` | `kubectl get certificate -A` → Ready: True |
+| N-02 | HTTPS funciona con certificado de confianza global | `curl https://api.sereni.dad/auth/.well-known/ory/webauthn.js` → HTTP 200, sin warnings TLS |
+| N-03 | HTTP redirige a HTTPS automáticamente | `curl http://api.sereni.dad` → 308 Permanent Redirect |
 | N-04 | Traefik sirve tráfico en :80 y :443 del VPS | `curl -I http://${FLOATING_IP}` → 308 |
 | N-05 | ForwardAuth middleware configurado correctamente | Request sin JWT → 401. Request con JWT válido → 200 |
 
@@ -4201,7 +4201,7 @@ Esta sección define con precisión cuándo la Fase 1 está **completa** y lista
 
 | # | Criterio | Verificación |
 |---|---------|-------------|
-| D-01 | CloudNativePG cluster en estado Healthy | `kubectl get cluster serenamente-pg -n serenamente-data` → STATUS: Cluster in healthy state |
+| D-01 | CloudNativePG cluster en estado Healthy | `kubectl get cluster serenidad-pg -n serenidad-data` → STATUS: Cluster in healthy state |
 | D-02 | Las 6 databases existen | `psql -c "\l"` → iam_db, kratos_db, openfga_db, scheduling_db, clinical_db, billing_db |
 | D-03 | RLS activo en todas las tablas de usuario | `psql -c "SELECT tablename, rowsecurity FROM pg_tables WHERE rowsecurity=true"` |
 | D-04 | Extensiones instaladas | `psql -d iam_db -c "\dx"` → pg_stat_statements, btree_gist |
@@ -4211,19 +4211,19 @@ Esta sección define con precisión cuándo la Fase 1 está **completa** y lista
 
 | # | Criterio | Verificación |
 |---|---------|-------------|
-| B-01 | WAL archiving a Backblaze B2 funcionando | `kubectl logs serenamente-pg-1 -n serenamente-data \| grep "archived"` → sin errores |
-| B-02 | Backup base ejecutado con éxito | `kubectl get backup -n serenamente-data` → STATUS: Completed |
+| B-01 | WAL archiving a Backblaze B2 funcionando | `kubectl logs serenidad-pg-1 -n serenidad-data \| grep "archived"` → sin errores |
+| B-02 | Backup base ejecutado con éxito | `kubectl get backup -n serenidad-data` → STATUS: Completed |
 | B-03 | PITR teóricamente disponible | Diferencia entre `created_at` del backup y `NOW()` < 10 minutos |
 
 ### 28.6 IAM (Tareas V-13 a V-14)
 
 | # | Criterio | Verificación |
 |---|---------|-------------|
-| A-01 | Kratos v1.3.1 responde `/health/ready` | `curl https://api.serenamente.com/auth/.well-known/ory/webauthn.js` → HTTP 200 |
+| A-01 | Kratos v1.3.1 responde `/health/ready` | `curl https://api.sereni.dad/auth/.well-known/ory/webauthn.js` → HTTP 200 |
 | A-02 | Kratos DB migrada correctamente | `psql -d kratos_db -c "\dt"` → tablas de Kratos presentes |
-| A-03 | IAM Domain Service responde `/health` | `kubectl exec -it deployment/iam-service -n serenamente-core -- wget -qO- http://localhost:8080/health` → `{"status":"ok"}` |
-| A-04 | `/internal/validate-token` retorna 401 para request sin token | `curl https://api.serenamente.com/api/iam/whoami` → 401 Unauthorized |
-| A-05 | Flujo completo de registro + login con Passkey funcional | Test manual en `https://app.serenamente.com/register` → Passkey registrada, login exitoso |
+| A-03 | IAM Domain Service responde `/health` | `kubectl exec -it deployment/iam-service -n serenidad-core -- wget -qO- http://localhost:8080/health` → `{"status":"ok"}` |
+| A-04 | `/internal/validate-token` retorna 401 para request sin token | `curl https://api.sereni.dad/api/iam/whoami` → 401 Unauthorized |
+| A-05 | Flujo completo de registro + login con Passkey funcional | Test manual en `https://app.sereni.dad/register` → Passkey registrada, login exitoso |
 | A-06 | POST `/api/iam/token/exchange` retorna JWT firmado con Ed25519 | Decodificar JWT con `jwt.io` → header alg: "EdDSA", claims: sub, role, tenant_id, did |
 | A-07 | JWT verificable con la clave pública Ed25519 | `openssl dgst -verify jwt_public_key.pem -signature <sig> <data>` → Verification OK |
 | A-08 | JWT contiene todos los claims necesarios | `sub`, `role`, `tenant_id`, `did`, `iat`, `exp` presentes en el payload |
@@ -4232,17 +4232,17 @@ Esta sección define con precisión cuándo la Fase 1 está **completa** y lista
 
 | # | Criterio | Verificación |
 |---|---------|-------------|
-| F-01 | BFF Hono desplegado en CF Workers | `curl https://api.serenamente.com/bff/health` → `{"status":"ok","service":"bff"}` |
-| F-02 | BFF rechaza requests sin JWT a endpoints protegidos | `curl https://api.serenamente.com/bff/api/iam/whoami` → 401 |
-| F-03 | Qwik SPA accesible en CF Pages | `curl https://app.serenamente.com` → HTML de la SPA (status 200) |
-| F-04 | Qwik SPA tiene TTI < 100ms medido con Lighthouse | `npx lighthouse https://app.serenamente.com --only-categories=performance` → Score ≥ 95 |
+| F-01 | BFF Hono desplegado en CF Workers | `curl https://api.sereni.dad/bff/health` → `{"status":"ok","service":"bff"}` |
+| F-02 | BFF rechaza requests sin JWT a endpoints protegidos | `curl https://api.sereni.dad/bff/api/iam/whoami` → 401 |
+| F-03 | Qwik SPA accesible en CF Pages | `curl https://app.sereni.dad` → HTML de la SPA (status 200) |
+| F-04 | Qwik SPA tiene TTI < 100ms medido con Lighthouse | `npx lighthouse https://app.sereni.dad --only-categories=performance` → Score ≥ 95 |
 
 ### 28.8 Flujo end-to-end (verificación final)
 
 El criterio definitivo de aceptación de la Fase 1 es el **flujo completo** funcional:
 
 ```
-1. Usuario abre https://app.serenamente.com en Chrome/Safari/Firefox
+1. Usuario abre https://app.sereni.dad en Chrome/Safari/Firefox
 2. Hace clic en "Registrarse"
 3. Ory Kratos muestra el flow de registro
 4. Usuario registra una Passkey (WebAuthn/FIDO2) con su dispositivo
@@ -4316,7 +4316,7 @@ alias fp='flux --kubeconfig ~/serenidad-platform/infra/clusters/hetzner-prod/kub
 
 # Comandos más usados:
 kp get pods -A                                          # Estado de todos los pods
-kp logs -f deployment/iam-service -n serenamente-core  # Logs en tiempo real
+kp logs -f deployment/iam-service -n serenidad-core  # Logs en tiempo real
 kp top pods -A --sort-by=memory                        # Uso de recursos
 kp get events -A --sort-by='.lastTimestamp' | tail -20 # Eventos recientes
 fp get all                                              # Estado de FluxCD

@@ -5,7 +5,7 @@ skinparam linetype ortho
 skinparam padding 6
 skinparam defaultTextAlignment center
 
-title Diagrama de Infraestructura Operacional v4.0\nSerenamente - Talos Linux + Kubernetes 1.33.x en Hetzner CX32 (Abril 2026)
+title Diagrama de Infraestructura Operacional v4.0\nSerenidad - Talos Linux + Kubernetes 1.33.x en Hetzner CX32 (Abril 2026)
 
 ' --- COLORES ---
 !define COLOR_K8S     #326CE5
@@ -74,7 +74,7 @@ rectangle "Hetzner CX32 - ~6.80 eur/mes\n4 vCPU AMD | 8 GB RAM | 80 GB SSD\nTalo
   }
 
   ' --- NAMESPACE: CORE (Aplicacion) ---
-  rectangle "Namespace: serenamente-core" {
+  rectangle "Namespace: serenidad-core" {
 
     component "IAM Domain Service\nGo 1.25.x + Chi v5 + pgx v5\n--\nJWT Ed25519 enrichment\nOutbox Worker\n/internal/validate-token\ngolang-migrate (init container)" <<Core>> as IAMSvc
 
@@ -91,7 +91,7 @@ rectangle "Hetzner CX32 - ~6.80 eur/mes\n4 vCPU AMD | 8 GB RAM | 80 GB SSD\nTalo
   }
 
   ' --- NAMESPACE: DATA ---
-  rectangle "Namespace: serenamente-data" {
+  rectangle "Namespace: serenidad-data" {
 
     component "CloudNativePG v1.x\nOperador CNCF (cnpg-system)\nCluster CRD - PostgreSQL 17.4\n--\n6 databases aisladas:\niam_db | scheduling_db\nclinical_db | billing_db\nkratos_db | openfga_db\nWAL continuo → B2\nPITR disponible" <<Data>> as PG
 
@@ -100,13 +100,13 @@ rectangle "Hetzner CX32 - ~6.80 eur/mes\n4 vCPU AMD | 8 GB RAM | 80 GB SSD\nTalo
   }
 
   ' --- NAMESPACE: OPS (Fase 3) ---
-  rectangle "Namespace: serenamente-ops (Fase 3)" {
+  rectangle "Namespace: serenidad-ops (Fase 3)" {
     component "kube-prometheus-stack v82.x\nPrometheus v3.x :9090\nGrafana v11.x :3000\nAlertmanager v0.27+ :9093\n--\nLoki v3.x + Promtail\nTempo v2.9+\nServiceMonitor auto-discovery\nAlertas → Telegram bot" <<Obs>> as ObsStack
   }
 
   ' --- FLUX CD ---
   rectangle "Namespace: flux-system" {
-    component "FluxCD v2.x\nCNCF Graduated\nGitOps Controller\n--\nGitRepository → github.com/serenamente\nHelmRelease → reconcilia cada 1m\nKustomization por namespace\nZero drift garantizado" <<K8s>> as FluxCD
+    component "FluxCD v2.x\nCNCF Graduated\nGitOps Controller\n--\nGitRepository → github.com/serenidad\nHelmRelease → reconcilia cada 1m\nKustomization por namespace\nZero drift garantizado" <<K8s>> as FluxCD
   }
 
 }
@@ -121,7 +121,7 @@ rectangle "Backups - Backblaze B2 - ~0.05 usd/mes" {
 ' ==========================================================
 ' GITHUB (CI/CD + GitOps Source)
 ' ==========================================================
-rectangle "GitHub - serenamente/serenidad-platform" {
+rectangle "GitHub - serenidad/serenidad-platform" {
   component "GitHub Actions CI\n--\ngo test + go build\ndocker build → ghcr.io\nUpdate image.tag en values.yaml\nSeal nuevos secrets\n\nghcr.io (Container Registry)\nOCI images firmadas" <<Infra>> as GH
 }
 
@@ -130,11 +130,11 @@ rectangle "GitHub - serenamente/serenidad-platform" {
 ' ==========================================================
 
 ' Usuario → Cloudflare
-[Navegador\nPaciente o Medico] --> CFPages : "HTTPS app.serenamente.com\n(Qwik v2.0 resumable)"
+[Navegador\nPaciente o Medico] --> CFPages : "HTTPS app.sereni.dad\n(Qwik v2.0 resumable)"
 CFPages --> CFWorkers : "fetch() al BFF"
 
 ' BFF → Hetzner
-CFWorkers --> Traefik : "HTTPS api.serenamente.com\n:443 TLS 1.3"
+CFWorkers --> Traefik : "HTTPS api.sereni.dad\n:443 TLS 1.3"
 
 ' cert-manager → Traefik (TLS)
 CertMgr .right.> Traefik : "Certificate TLS\nLet's Encrypt auto"
@@ -262,10 +262,10 @@ note right of NATS
   BREAKING vs v2.10.x.
 
   4 Streams (NACK CRDs):
-  SERENAMENTE_IAM:      365d
-  SERENAMENTE_SCHED:    730d
-  SERENAMENTE_CLINICAL: sin limite
-  SERENAMENTE_BILLING:  3650d
+  SERENIDAD_IAM:      365d
+  SERENIDAD_SCHED:    730d
+  SERENIDAD_CLINICAL: sin limite
+  SERENIDAD_BILLING:  3650d
 
   storage=file → PVC (persiste en disco).
   Consumer: explicit ACK.

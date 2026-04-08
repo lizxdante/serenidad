@@ -218,7 +218,7 @@ b2: Backblaze B2 {
 # =============================================================
 
 # CF → Hetzner
-cloudflare.bff -> hetzner.traefik: "HTTPS api.serenamente.com :443 TLS 1.3"
+cloudflare.bff -> hetzner.traefik: "HTTPS api.sereni.dad :443 TLS 1.3"
 
 # Traefik → Servicios (ForwardAuth pattern)
 hetzner.traefik -> hetzner.domain.iam: "ForwardAuth → /internal/validate-token"

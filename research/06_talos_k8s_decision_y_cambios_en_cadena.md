@@ -3,7 +3,7 @@
 
 | Campo | Valor |
 |-------|-------|
-| **Proyecto** | Serenamente — Clínica Digital de Salud Mental |
+| **Proyecto** | Serenidad — Clínica Digital de Salud Mental |
 | **Versión** | 1.0 |
 | **Fecha** | Abril 2026 |
 | **Autor** | djca |
@@ -350,7 +350,7 @@ brew install siderolabs/tap/talosctl  # macOS
 # o: curl -sL https://talos.dev/install | sh
 
 # Generar configuración del cluster
-talosctl gen config serenamente-prod https://<VPS_IP>:6443 \
+talosctl gen config serenidad-prod https://<VPS_IP>:6443 \
   --with-secrets secrets.yaml \
   --config-patch @patches/single-node.yaml \
   --output-dir ./infra/clusters/hetzner-prod/talos/
@@ -364,7 +364,7 @@ talosctl gen config serenamente-prod https://<VPS_IP>:6443 \
 ```yaml
 machine:
   network:
-    hostname: serenamente-prod-01
+    hostname: serenidad-prod-01
   kubelet:
     extraArgs:
       node-labels: "node-role.kubernetes.io/worker="
@@ -401,7 +401,7 @@ kubectl --kubeconfig ./infra/clusters/hetzner-prod/kubeconfig get nodes
 - `apt-get`, `systemctl`, `bash`, SSH — no existen en Talos
 - `/etc/` editable — no existe; toda config es via `talosctl apply-config`
 - Docker Compose files — reemplazados por Helm charts y Kubernetes manifests
-- `adduser serenamente`, `usermod -aG docker` — no existe modelo de usuario en Talos
+- `adduser serenidad`, `usermod -aG docker` — no existe modelo de usuario en Talos
 
 ### Qué herramientas se añaden
 
@@ -436,7 +436,7 @@ kubectl --kubeconfig ./infra/clusters/hetzner-prod/kubeconfig get nodes
 
 **Antes (Docker Compose):** Los servicios se comunican por nombre de container en la red Docker: `http://ory-kratos:4433/`
 
-**Después (Kubernetes):** Los Services de Kubernetes mantienen el mismo patrón dentro del mismo namespace: `http://ory-kratos:4433/`. Entre namespaces: `http://ory-kratos.serenamente-core.svc.cluster.local:4433/`.
+**Después (Kubernetes):** Los Services de Kubernetes mantienen el mismo patrón dentro del mismo namespace: `http://ory-kratos:4433/`. Entre namespaces: `http://ory-kratos.serenidad-core.svc.cluster.local:4433/`.
 
 **El código de los microservicios Go no necesita cambios** para el service discovery interno — el nombre del Service de Kubernetes puede ser idéntico al nombre del container de Docker.
 
@@ -495,7 +495,7 @@ Traefik v3 (DaemonSet, hostPort 80/443)
 
 **Caddyfile anterior:**
 ```caddy
-api.serenamente.com {
+api.sereni.dad {
   forward_auth iam-service:8080 {
     uri /internal/validate-token
     copy_headers X-User-ID X-User-Role X-Tenant-ID
@@ -513,7 +513,7 @@ apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: iam-forward-auth
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   forwardAuth:
     address: http://iam-service:8080/internal/validate-token
@@ -528,19 +528,19 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: api-routes
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   entryPoints:
     - websecure
   routes:
-    - match: Host(`api.serenamente.com`) && PathPrefix(`/api/scheduling`)
+    - match: Host(`api.sereni.dad`) && PathPrefix(`/api/scheduling`)
       kind: Rule
       services:
         - name: scheduling-service
           port: 8081
       middlewares:
         - name: iam-forward-auth
-    - match: Host(`api.serenamente.com`) && PathPrefix(`/auth`)
+    - match: Host(`api.sereni.dad`) && PathPrefix(`/auth`)
       kind: Rule
       services:
         - name: ory-kratos
@@ -558,7 +558,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: ops@serenamente.com
+    email: ops@sereni.dad
     privateKeySecretRef:
       name: letsencrypt-prod-key
     solvers:
@@ -583,7 +583,7 @@ ports:
     hostPort: 443
 
 additionalArguments:
-  - "--certificatesresolvers.letsencrypt.acme.email=ops@serenamente.com"
+  - "--certificatesresolvers.letsencrypt.acme.email=ops@sereni.dad"
   - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
   - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
   - "--api.dashboard=true"
@@ -607,7 +607,7 @@ providers:
 postgres:
   image: postgres:17-alpine
   environment:
-    POSTGRES_USER: serenamente_admin
+    POSTGRES_USER: serenidad_admin
     POSTGRES_PASSWORD: ${PG_ADMIN_PASSWORD}
   volumes:
     - postgres-data:/var/lib/postgresql/data
@@ -620,8 +620,8 @@ postgres:
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: serenamente-pg
-  namespace: serenamente-data
+  name: serenidad-pg
+  namespace: serenidad-data
 spec:
   instances: 1  # Single-node; aumentar a 3 en Fase 3+ para HA
   imageName: ghcr.io/cloudnative-pg/postgresql:17.4
@@ -655,7 +655,7 @@ spec:
 
   backup:
     barmanObjectStore:
-      destinationPath: s3://serenamente-backups/postgres/
+      destinationPath: s3://serenidad-backups/postgres/
       endpointURL: https://s3.us-west-004.backblazeb2.com
       s3Credentials:
         accessKeyId:
@@ -683,23 +683,23 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: iam-db-migrate
-  namespace: serenamente-core
+  namespace: serenidad-core
 spec:
   template:
     spec:
       initContainers:
         - name: wait-for-postgres
           image: busybox
-          command: ['sh', '-c', 'until nc -z serenamente-pg-rw.serenamente-data.svc.cluster.local 5432; do sleep 2; done']
+          command: ['sh', '-c', 'until nc -z serenidad-pg-rw.serenidad-data.svc.cluster.local 5432; do sleep 2; done']
       containers:
         - name: migrate
-          image: ghcr.io/serenamente/iam:latest
+          image: ghcr.io/serenidad/iam:latest
           command: ["/app/iam", "migrate"]
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
-                  name: serenamente-pg-app
+                  name: serenidad-pg-app
                   key: uri  # CloudNativePG genera este secret automáticamente
       restartPolicy: OnFailure
 ```
@@ -722,20 +722,20 @@ El pg_dump diario con cron es reemplazado por una estrategia de backup industria
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
-  name: serenamente-daily-backup
-  namespace: serenamente-data
+  name: serenidad-daily-backup
+  namespace: serenidad-data
 spec:
   schedule: "0 2 * * *"  # 02:00 UTC daily
   backupOwnerReference: self
   cluster:
-    name: serenamente-pg
+    name: serenidad-pg
 ```
 
 **Restore desde B2:**
 ```bash
 # PITR a un punto específico:
-kubectl cnpg restore serenamente-pg \
-  --backup-name serenamente-daily-backup-2026-04-01 \
+kubectl cnpg restore serenidad-pg \
+  --backup-name serenidad-daily-backup-2026-04-01 \
   --target-time "2026-04-01T14:30:00Z"
 ```
 
@@ -758,7 +758,7 @@ Con GitOps (FluxCD), todos los manifests están en Git. Los Kubernetes Secrets n
 # Instalar kubeseal CLI
 # Crear un secret y sellarlo:
 kubectl create secret generic kratos-config \
-  --from-literal=DSN="postgres://kratos_user:${KRATOS_DB_PASSWORD}@serenamente-pg-rw:5432/kratos_db" \
+  --from-literal=DSN="postgres://kratos_user:${KRATOS_DB_PASSWORD}@serenidad-pg-rw:5432/kratos_db" \
   --dry-run=client -o yaml | \
   kubeseal --format yaml > infra/k8s/secrets/kratos-config-sealed.yaml
 
@@ -787,7 +787,7 @@ Developer pushes code to main branch
         ▼
 GitHub Actions CI:
   1. go test ./...
-  2. docker build → ghcr.io/serenamente/iam:sha-<commit>
+  2. docker build → ghcr.io/serenidad/iam:sha-<commit>
   3. Update infra/apps/iam-service/values.yaml: image.tag: sha-<commit>
   4. Commit + push values change
         │
@@ -874,7 +874,7 @@ infra/
 ```bash
 # Instalar FluxCD en el cluster Talos
 flux bootstrap github \
-  --owner=serenamente \
+  --owner=serenidad \
   --repository=serenidad-platform \
   --branch=main \
   --path=./infra/clusters/hetzner-prod \
@@ -950,7 +950,7 @@ Agregar capacidad al cluster es idéntico en Fase 1, 2 y 3+:
 # 1. Crear nuevo VPS CX32 en Hetzner
 
 # 2. Generar config del worker
-talosctl gen config serenamente-prod https://<CONTROL_PLANE_IP>:6443 \
+talosctl gen config serenidad-prod https://<CONTROL_PLANE_IP>:6443 \
   --type worker \
   --output ./infra/clusters/hetzner-prod/talos/worker-01.yaml
 
@@ -1115,15 +1115,15 @@ Multi-nodo en k8s es trivial vs el cambio de Docker Compose → Swarm → k8s qu
 ## 19. Estructura de Namespaces Kubernetes
 
 ```
-serenamente-core        → IAM Service, Scheduling, Clinical, Billing
+serenidad-core        → IAM Service, Scheduling, Clinical, Billing
                           Ory Kratos, OpenFGA
                           (Workloads de aplicación)
 
-serenamente-data        → CloudNativePG cluster (PostgreSQL)
+serenidad-data        → CloudNativePG cluster (PostgreSQL)
                           NATS JetStream
                           (Workloads de persistencia y eventos)
 
-serenamente-ops         → kube-prometheus-stack (Prometheus, Grafana, Alertmanager)
+serenidad-ops         → kube-prometheus-stack (Prometheus, Grafana, Alertmanager)
                           Loki + Promtail
                           Tempo
                           (Observabilidad — Fase 3)
@@ -1137,16 +1137,16 @@ traefik                 → Traefik v3 DaemonSet
 sealed-secrets          → Sealed Secrets controller
 
 cnpg-system             → CloudNativePG operator
-                          (El cluster PostgreSQL en serenamente-data)
+                          (El cluster PostgreSQL en serenidad-data)
 
 flux-system             → FluxCD controllers (auto-generado por bootstrap)
 ```
 
 **NetworkPolicy (Aislamiento):**
 ```yaml
-# Solo serenamente-core puede conectar a serenamente-data
-# serenamente-ops puede conectar a todos los namespaces para scrape de métricas
-# traefik puede conectar a serenamente-core
+# Solo serenidad-core puede conectar a serenidad-data
+# serenidad-ops puede conectar a todos los namespaces para scrape de métricas
+# traefik puede conectar a serenidad-core
 # Ningún namespace puede conectar a cert-manager o flux-system
 ```
 
@@ -1172,17 +1172,17 @@ Ver sección 13 para la estructura completa de directorios.
 | Traefik v3 | `traefik` | `traefik` | `traefik` | Customizado |
 | Sealed Secrets | `bitnami/sealed-secrets` | `sealed-secrets` | `sealed-secrets` | Estándar |
 | CloudNativePG operator | `cnpg` | `cloudnative-pg` | `cnpg-system` | Estándar |
-| CloudNativePG cluster | Custom CRD | — | `serenamente-data` | Cluster YAML |
-| NATS JetStream | `nats` | `nats` | `serenamente-data` | JetStream enabled |
-| Ory Kratos | `ory` | `kratos` | `serenamente-core` | identity schemas |
-| OpenFGA | `openfga` | `openfga` | `serenamente-core` | 1 replica |
-| IAM Service | Custom | `iam-service` | `serenamente-core` | Go image |
-| Scheduling Service | Custom | `scheduling-service` | `serenamente-core` | Go image |
-| Clinical Record | Custom | `clinical-service` | `serenamente-core` | Go image |
-| Billing & Ops | Custom | `billing-service` | `serenamente-core` | Go image |
-| kube-prometheus-stack | `prometheus-community` | `kube-prometheus-stack` | `serenamente-ops` | Ajustado para CX32 |
-| Loki | `grafana` | `loki` | `serenamente-ops` | Simple scalable |
-| Tempo | `grafana` | `tempo` | `serenamente-ops` | Single binary |
+| CloudNativePG cluster | Custom CRD | — | `serenidad-data` | Cluster YAML |
+| NATS JetStream | `nats` | `nats` | `serenidad-data` | JetStream enabled |
+| Ory Kratos | `ory` | `kratos` | `serenidad-core` | identity schemas |
+| OpenFGA | `openfga` | `openfga` | `serenidad-core` | 1 replica |
+| IAM Service | Custom | `iam-service` | `serenidad-core` | Go image |
+| Scheduling Service | Custom | `scheduling-service` | `serenidad-core` | Go image |
+| Clinical Record | Custom | `clinical-service` | `serenidad-core` | Go image |
+| Billing & Ops | Custom | `billing-service` | `serenidad-core` | Go image |
+| kube-prometheus-stack | `prometheus-community` | `kube-prometheus-stack` | `serenidad-ops` | Ajustado para CX32 |
+| Loki | `grafana` | `loki` | `serenidad-ops` | Simple scalable |
+| Tempo | `grafana` | `tempo` | `serenidad-ops` | Single binary |
 | Hetzner CCM | Custom manifest | — | `kube-system` | hcloud token |
 
 ---
@@ -1228,7 +1228,7 @@ Ver sección 13 para la estructura completa de directorios.
 | OOM en CX32 durante picos (8 GB) | Baja | Alta | Configurar resource limits en todos los pods. Prometheus alertas en >80% RAM. Upgrade a CX42 disponible sin downtime. |
 | cert-manager falla al renovar TLS | Muy Baja | Alta | Usar `letsencrypt-staging` en dev, `letsencrypt-prod` en prod. Alertmanager alerta en certificados <30 días de expiración. |
 | FluxCD diverge del estado Git | Muy Baja | Baja | FluxCD auto-reconcilia; alertar en FluxCD reconciliation failures. |
-| CloudNativePG backup a B2 falla silenciosamente | Baja | Alta | Alertmanager alert en `CnpgBackupFailed`. Verificación semanal manual: `kubectl cnpg status serenamente-pg`. |
+| CloudNativePG backup a B2 falla silenciosamente | Baja | Alta | Alertmanager alert en `CnpgBackupFailed`. Verificación semanal manual: `kubectl cnpg status serenidad-pg`. |
 | Versión Kubernetes incompatible con chart | Baja | Media | Usar rangos de versión semántica en HelmRelease. Testear upgrades en staging primero. |
 | Talos upgrade rompe el cluster | Muy Baja | Alta | Talos tiene upgrade atómico con rollback. Siempre upgrades en ventana de mantenimiento. |
 | NATS data loss en pod restart | Muy Baja | Alta | JetStream con `storage: file` persiste en PersistentVolumeClaim. No usa emptyDir. |
