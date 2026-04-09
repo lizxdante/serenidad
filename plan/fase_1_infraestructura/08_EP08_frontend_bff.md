@@ -244,6 +244,16 @@
 
 ---
 
+## Criterio de Aceptación Global — EP-08
+
+| # | Criterio | Verificación |
+|---|----------|--------------|
+| CA-EP08-E2E | Flujo end-to-end funcional: registro → login Passkey → token exchange via BFF → dashboard con datos de usuario | Ejecutar el flujo completo desde `https://app.sereni.dad`: registrar Passkey, verificar email, iniciar sesión, obtener JWT via BFF, ver dashboard con nombre y rol del usuario |
+
+Este criterio valida la integración entre HU-08.1 (BFF) y HU-08.2 (SPA) y es el gate final de la épica EP-08.
+
+---
+
 ## Resumen de Dependencias Internas EP-08
 
 ```

@@ -27,6 +27,34 @@
 
 ---
 
+## Diagrama de Topología de Red
+
+```
+Internet
+  │
+  ▼
+Cloudflare (CDN + DNS Proxy)
+  ├──► CF Workers  ← BFF (Hono v4)
+  ├──► CF Pages    ← SPA (Qwik v2)
+  │
+  ▼ (DNS: api.sereni.dad → Floating IP)
+Hetzner Firewall (serenidad-prod-fw)
+  │  Puertos abiertos: 80, 443 (público), 50000, 6443 (solo IP de trabajo)
+  ▼
+VPS CX32 (Talos Linux) — Floating IP: ${FLOATING_IP}
+  │
+  ▼
+Kubernetes (single-node control-plane)
+  ├── traefik ns      → Traefik v3.x (Ingress Controller)
+  ├── cert-manager ns  → cert-manager (TLS via Let's Encrypt)
+  ├── serenidad-core  → IAM Service, Ory Kratos
+  ├── serenidad-data  → PostgreSQL 17.4 (CloudNativePG)
+  ├── cnpg-system     → CNPG Operator
+  ├── serenidad-ops   → Observabilidad
+  ├── hcloud-system   → Hetzner CCM
+  └── flux-system     → FluxCD (GitOps)
+```
+
 ## Diagrama de Dependencias entre Épicas
 
 ```

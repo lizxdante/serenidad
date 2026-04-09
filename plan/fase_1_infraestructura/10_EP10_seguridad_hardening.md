@@ -20,113 +20,19 @@
 
 ### Tareas y Subtareas
 
-#### T-10.1.1 — Crear NetworkPolicies deny-all por defecto
+> **Implementación detallada:** Ver `HU-10.1A_Network_Policies_K8s.md` para los manifiestos YAML completos y comandos de verificación de las NetworkPolicies (T-10.1.1 a T-10.1.7, T-10.1.9). Ver `HU-10.1B_Firewall_Hetzner_Dinamico.md` para el script de firewall (T-10.1.8).
 
-- **ST-10.1.1.1** — Crear directorio `infra/infrastructure/network-policies/`.
-  - **CA:** Directorio existe (puede ya existir desde EP-03).
-- **ST-10.1.1.2** — Crear archivo `infra/infrastructure/network-policies/deny-all-default.yaml`.
-  - **CA:** NetworkPolicy `deny-all-ingress` en namespace `serenidad-core`:
-    - `podSelector: {}` (todos los pods).
-    - `policyTypes: [Ingress, Egress]`.
-    - Sin reglas (denegar todo).
-  - **CA:** NetworkPolicy `deny-all-ingress` en namespace `serenidad-data`:
-    - `podSelector: {}`.
-    - `policyTypes: [Ingress, Egress]`.
-    - Sin reglas (denegar todo).
-- **ST-10.1.1.3** — Commitear y pushear.
-  - **CA:** FluxCD aplica las policies.
-  - **CA:** `kubectl get networkpolicies -n serenidad-core` → `deny-all-ingress`.
-  - **CA:** `kubectl get networkpolicies -n serenidad-data` → `deny-all-ingress`.
-
-#### T-10.1.2 — Crear NetworkPolicy: Traefik → IAM Service
-
-- **ST-10.1.2.1** — Agregar NetworkPolicy `allow-traefik-to-iam` al archivo o como archivo separado.
-  - **CA:** Namespace: `serenidad-core`.
-  - **CA:** `podSelector.matchLabels.app: iam-service`.
-  - **CA:** `policyTypes: [Ingress]`.
-  - **CA:** Ingress: from namespace `traefik` (via `namespaceSelector.matchLabels.kubernetes.io/metadata.name: traefik`).
-  - **CA:** Port: TCP 8080.
-- **ST-10.1.2.2** — Verificar que Traefik puede alcanzar el IAM Service.
-  - **CA:** `curl https://api.sereni.dad/api/iam/health` → respuesta del IAM Service (no bloqueado por NetworkPolicy).
-  - **CA:** Request desde otro pod (no Traefik) al IAM Service → bloqueado.
-
-#### T-10.1.3 — Crear NetworkPolicy: IAM Service → PostgreSQL
-
-- **ST-10.1.3.1** — Agregar NetworkPolicy `allow-iam-to-postgres`.
-  - **CA:** Namespace: `serenidad-data`.
-  - **CA:** `podSelector.matchLabels: cnpg.io/cluster: serenidad-pg`.
-  - **CA:** `policyTypes: [Ingress]`.
-  - **CA:** Ingress: from namespace `serenidad-core`.
-  - **CA:** Port: TCP 5432.
-- **ST-10.1.3.2** — Verificar conectividad IAM → PG.
-  - **CA:** IAM Service puede conectar a PostgreSQL (health `/ready` → db connected).
-  - **CA:** Pod en otro namespace (no serenidad-core) no puede conectar a PG en serenidad-data.
-
-#### T-10.1.4 — Crear NetworkPolicy: Kratos → PostgreSQL
-
-- **ST-10.1.4.1** — Verificar que la regla `allow-iam-to-postgres` cubre a Kratos (también en `serenidad-core`).
-  - **CA:** Si Kratos está en `serenidad-core`, la regla que permite from `serenidad-core` ya lo cubre.
-  - **CA:** Si no, crear regla adicional.
-- **ST-10.1.4.2** — Verificar que Kratos puede conectar a `kratos_db`.
-  - **CA:** Kratos health `/health/ready` → `{"status":"ok"}`.
-
-#### T-10.1.5 — Crear NetworkPolicy: DNS egress para todos los pods
-
-- **ST-10.1.5.1** — Agregar NetworkPolicy `allow-dns-egress` en `serenidad-core`.
-  - **CA:** `podSelector: {}` (todos los pods).
-  - **CA:** `policyTypes: [Egress]`.
-  - **CA:** Egress: to namespace `kube-system`, ports UDP 53 y TCP 53.
-- **ST-10.1.5.2** — Agregar misma policy en `serenidad-data`.
-  - **CA:** Pods en `serenidad-data` también pueden resolver DNS.
-- **ST-10.1.5.3** — Verificar resolución DNS desde pods.
-  - **CA:** `kubectl exec -it deployment/iam-service -n serenidad-core -- nslookup serenidad-pg-rw.serenidad-data.svc.cluster.local` → resuelve.
-
-#### T-10.1.6 — Crear NetworkPolicy: egress adicional para pods que necesitan acceso externo
-
-- **ST-10.1.6.1** — Crear policy para IAM Service → Kratos Admin (egress interno).
-  - **CA:** IAM Service puede hacer requests a `kratos-admin.serenidad-core.svc.cluster.local:4434`.
-- **ST-10.1.6.2** — Crear policy para cert-manager → Let's Encrypt (egress externo HTTPS).
-  - **CA:** cert-manager puede contactar servidores ACME de Let's Encrypt.
-- **ST-10.1.6.3** — Crear policy para CloudNativePG → Backblaze B2 (egress externo HTTPS).
-  - **CA:** Pod de PG puede enviar WAL y backups a B2 via HTTPS.
-
-#### T-10.1.7 — Crear kustomization.yaml del componente network-policies
-
-- **ST-10.1.7.1** — Crear `infra/infrastructure/network-policies/kustomization.yaml`.
-  - **CA:** Resources: `deny-all-default.yaml` y cualquier archivo adicional de policies.
-- **ST-10.1.7.2** — Commitear y verificar reconciliación.
-  - **CA:** FluxCD reconcilia sin error.
-
-#### T-10.1.8 — Crear script de actualización de firewall Hetzner
-
-- **ST-10.1.8.1** — Crear archivo `scripts/update-firewall.sh`.
-  - **CA:** Script:
-    - `set -euo pipefail`.
-    - `source .envrc`.
-    - Obtiene IP actual con `curl -s https://ifconfig.me`.
-    - Obtiene ID del firewall `serenidad-prod-fw` con `hcloud firewall list -o json | jq`.
-    - Actualiza regla del puerto 50000 (Talos API) con `hcloud firewall replace-rule`.
-    - Actualiza regla del puerto 6443 (K8s API) con `hcloud firewall replace-rule`.
-    - Imprime mensaje de confirmación.
-  - **CA:** Script funcional y probado.
-- **ST-10.1.8.2** — Hacer ejecutable (`chmod +x`).
-  - **CA:** Permisos de ejecución presentes.
-- **ST-10.1.8.3** — Commitear y pushear.
-  - **CA:** Script en `scripts/update-firewall.sh` en `main`.
-
-#### T-10.1.9 — Verificar aislamiento de red completo
-
-- **ST-10.1.9.1** — Test: pod en `default` namespace no puede alcanzar PG en `serenidad-data`.
-  - **CA:** Timeout o connection refused.
-- **ST-10.1.9.2** — Test: pod en `default` namespace no puede alcanzar IAM Service en `serenidad-core`.
-  - **CA:** Timeout o connection refused.
-- **ST-10.1.9.3** — Test: IAM Service puede alcanzar PG y Kratos.
-  - **CA:** `/ready` → `{"status":"ok","db":"connected","kratos":"reachable"}`.
-- **ST-10.1.9.4** — Test: Traefik puede alcanzar IAM Service y Kratos.
-  - **CA:** Requests HTTPS proxiados correctamente.
-- **ST-10.1.9.5** — Test: script `update-firewall.sh` actualiza reglas correctamente.
-  - **CA:** `./scripts/update-firewall.sh` → firewall actualizado con nueva IP.
-  - **CA:** `hcloud firewall describe serenidad-prod-fw` → IPs actualizadas en reglas 50000 y 6443.
+| Tarea | Descripción | Archivo detallado |
+|-------|-------------|-------------------|
+| T-10.1.1 | NetworkPolicies deny-all en `serenidad-core` y `serenidad-data` | HU-10.1A |
+| T-10.1.2 | Allow: Traefik → IAM Service (port 8080) | HU-10.1A |
+| T-10.1.3 | Allow: IAM Service → PostgreSQL (port 5432) | HU-10.1A |
+| T-10.1.4 | Allow: Kratos → PostgreSQL (cubierto por regla serenidad-core) | HU-10.1A |
+| T-10.1.5 | Allow: DNS egress (port 53 UDP/TCP) en ambos namespaces | HU-10.1A |
+| T-10.1.6 | Allow: egress externo (cert-manager→LE, CNPG→B2, IAM→Kratos Admin) | HU-10.1A |
+| T-10.1.7 | Kustomization del componente network-policies | HU-10.1A |
+| T-10.1.8 | Script `update-firewall.sh` para IP dinámica | HU-10.1B |
+| T-10.1.9 | Verificación completa de aislamiento de red | HU-10.1A |
 
 ### Criterios de Aceptación de la HU-10.1
 

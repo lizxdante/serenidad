@@ -83,12 +83,13 @@
   - `clinical_db` con OWNER `serenidad_admin`, encoding UTF8, collate C.
   - `billing_db` con OWNER `serenidad_admin`, encoding UTF8, collate C.
   - **CA:** 6 comandos `CREATE DATABASE` en `postInitSQL`.
-- **ST-05.1.4.3** — Configurar extensiones en databases relevantes via `postInitSQL`:
+- **ST-05.1.4.3** — Instalar extensiones en databases relevantes **post-bootstrap** (T-05.1.6).
   - `iam_db`: `pg_stat_statements`, `btree_gist`.
   - `scheduling_db`: `pg_stat_statements`, `btree_gist`.
   - `clinical_db`: `pg_stat_statements`.
   - `billing_db`: `pg_stat_statements`.
-  - **CA:** Comandos `\c <db>; CREATE EXTENSION IF NOT EXISTS ...` en `postInitSQL`.
+  - **LIMITACION:** `postInitSQL` de CNPG solo ejecuta SQL puro contra la DB del bootstrap (`postgres`). No soporta metacomandos de `psql` como `\c <db>`. Por tanto, las extensiones en cada DB individual se instalan manualmente vía `kubectl exec` en T-05.1.6, NO en `postInitSQL`.
+  - **CA:** Extensiones instaladas y verificadas con `\dx` en cada base de datos tras T-05.1.6.
 - **ST-05.1.4.4** — Configurar recursos del pod PostgreSQL.
   - **CA:** Requests: `memory: "256Mi"`, `cpu: "100m"`.
   - **CA:** Limits: `memory: "512Mi"`, `cpu: "1000m"`.

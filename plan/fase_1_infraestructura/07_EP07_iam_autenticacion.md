@@ -1,6 +1,6 @@
 # EP-07 — IAM: Autenticación y Autorización
 
-**Épica:** Como equipo de desarrollo, necesitamos Ory Kratos v1.3.1 desplegado como motor de autenticación con Passkeys/WebAuthn y el IAM Domain Service en Go con JWT Ed25519, Outbox pattern, y migraciones de base de datos, para que los usuarios puedan registrarse, autenticarse, y obtener tokens JWT que autoricen el acceso a todos los endpoints protegidos del sistema.
+**Épica:** Como equipo de desarrollo, necesitamos Ory Kratos v1.3.x (>= 1.3.1) desplegado como motor de autenticación con Passkeys/WebAuthn y el IAM Domain Service en Go con JWT Ed25519, Outbox pattern, y migraciones de base de datos, para que los usuarios puedan registrarse, autenticarse, y obtener tokens JWT que autoricen el acceso a todos los endpoints protegidos del sistema.
 
 **Origen:** Secciones §18 (V-13) y §19 (V-14) del documento de decisión.
 **Prioridad:** Crítica — Componente central de identidad para todo el sistema.
@@ -15,10 +15,10 @@
 
 ---
 
-## HU-07.1 — Ory Kratos v1.3.1 (V-13)
+## HU-07.1 — Ory Kratos v1.3.x (>= 1.3.1) (V-13)
 
 **Como** ingeniero de plataforma,
-**quiero** tener Ory Kratos v1.3.1 desplegado en el cluster con Passkeys como método principal de autenticación, identity schemas para patient y doctor, y email de verificación via Resend,
+**quiero** tener Ory Kratos v1.3.x (>= 1.3.1) desplegado en el cluster con Passkeys como método principal de autenticación, identity schemas para patient y doctor, y email de verificación via Resend,
 **para que** los usuarios puedan registrarse y autenticarse de forma segura sin contraseñas.
 
 **Dependencias:** HU-04.2 (Traefik), HU-04.3 (DNS), HU-05.1 (PostgreSQL `kratos_db`).

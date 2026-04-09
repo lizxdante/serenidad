@@ -162,6 +162,31 @@
 - [ ] Procedimiento de hotfix marcado como "solo emergencias".
 - [ ] Procedimiento de rotación de age incluye re-cifrado de todos los secrets.
 
+#### T-11.2.X — Runbook de Rotación de Secrets
+
+> **NOTA:** Este runbook se documenta en Fase 1 pero la rotación efectiva se ejecuta periódicamente post-despliegue.
+
+**Inventario de secrets y frecuencia de rotación sugerida:**
+
+| Secret | Ubicación | Frecuencia | Procedimiento |
+|--------|-----------|------------|---------------|
+| Kratos Cookie Secret | `iam-service-secrets` / SOPS | 6 meses | Generar nuevo con `openssl rand -base64 32`, cifrar con SOPS, push → FluxCD redeploy Kratos |
+| Kratos Cipher Secret | `iam-service-secrets` / SOPS | 6 meses | Igual que cookie secret |
+| PG Admin Password | `cnpg-serenidad-admin-creds` / SOPS | 12 meses | Generar nuevo, cifrar, push → `ALTER ROLE serenidad_admin PASSWORD 'nuevo'` |
+| B2 Application Key | `cnpg-b2-credentials` / SOPS | 12 meses | Rotar en B2 console, actualizar .envrc, re-cifrar, push |
+| JWT Ed25519 Keys | `iam-service-secrets` / SOPS | 12 meses | Generar nuevo par ed25519, cifrar, push → restart IAM (JWTs previos invalidos) |
+| CF API Token | GitLab CI/CD variables | 12 meses | Rotar en Cloudflare dashboard, actualizar en GitLab CI vars |
+| HCLOUD_TOKEN | `.envrc` + GitLab CI/CD | 12 meses | Rotar en Hetzner Cloud console, actualizar .envrc y GitLab CI vars |
+| Resend API Key | `.envrc` / Kratos SMTP config | 12 meses | Rotar en Resend dashboard, actualizar .envrc, re-cifrar Kratos secret |
+
+**Procedimiento general de rotación:**
+1. Generar nuevo secret
+2. Actualizar `.envrc` con el nuevo valor
+3. Re-cifrar con `./scripts/encrypt-secret.sh`
+4. Commit y push — FluxCD aplica automáticamente
+5. Verificar que el servicio arranca correctamente post-rotación
+6. Guardar backup del nuevo secret en Password Manager
+
 ---
 
 ## HU-11.3 — Troubleshooting y Recuperación ante Fallos (§27 + §25.5)

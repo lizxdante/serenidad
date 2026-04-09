@@ -22,23 +22,13 @@
 
 #### T-06.1.1 — Inicializar workspace de buf
 
+> **Implementación detallada:** Ver `HU-06.1_Schemas_Protobuf.md` para los archivos `buf.yaml`, `buf.gen.yaml`, definiciones `.proto` completas y comandos de verificación.
+
 - **ST-06.1.1.1** — Navegar a `packages/events/` y ejecutar `buf config init`.
   - **CA:** Archivo `buf.yaml` generado en `packages/events/`.
 - **ST-06.1.1.2** — Editar `buf.yaml` con configuración del proyecto.
-  - **CA:** Contenido:
-    - `version: v2`.
-    - `modules[0].path: proto`.
-    - `modules[0].name: buf.build/serenidad/events`.
-    - `lint.use: [STANDARD]`.
-    - `breaking.use: [FILE]`.
   - **CA:** Archivo válido y parseable por `buf`.
 - **ST-06.1.1.3** — Crear `buf.gen.yaml` para generación de código Go.
-  - **CA:** Contenido:
-    - `version: v2`.
-    - `managed.enabled: true`.
-    - `managed.override[0].file_option: go_package_prefix` con valor `gitlab.com/serenidad/serenidad-platform/packages/events/gen`.
-    - Plugin `buf.build/protocolbuffers/go` → `out: gen/go`, `opt: paths=source_relative`.
-    - Plugin `buf.build/grpc/go` → `out: gen/go`, `opt: paths=source_relative, require_unimplemented_servers=false`.
   - **CA:** Archivo válido y parseable por `buf`.
 
 #### T-06.1.2 — Definir schema de eventos IAM v1
